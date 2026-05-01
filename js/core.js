@@ -499,31 +499,26 @@
   }
 
   function isSpecial(record) {
-    const fields = [record.collection, record.location, record.itemType, record.callNumber].map(normalizeText);
+    const fields = [record.collection, record.location].map(normalizeText);
     return fields.some((field) => profile.specialSignals.some((signal) => field.includes(signal)));
   }
 
   function isDvdOrBluRay(record) {
     const collection = normalizeText(record.collection);
-    const itemType = normalizeText(record.itemType);
     const call = normalizeText(record.callNumber);
     return profile.mediaCollections.map(normalizeText).includes(collection)
-      || /\b(DVD|BLU-?RAY)\b/.test(itemType)
       || /^(J\s+)?(DVD|BLU-?RAY)\b/.test(call);
   }
 
   function isMusicCd(record) {
     return normalizeText(record.collection) === "MUSIC - CD"
-      || normalizeText(record.itemType) === "CD MUSIC"
       || /^CD\//.test(normalizeText(record.callNumber));
   }
 
   function isAudiobookCd(record) {
-    const itemType = normalizeText(record.itemType);
     const location = normalizeText(record.location);
     const call = normalizeText(record.callNumber);
-    return itemType === "CD BOOK"
-      || location.includes("AUDIOBOOK")
+    return location.includes("AUDIOBOOK")
       || /^CD\s+/.test(call);
   }
 
@@ -553,7 +548,7 @@
   }
 
   function isLargePrint(record) {
-    const text = [record.location, record.itemType, record.callNumber, record.title].map(normalizeText).join(" ");
+    const text = [record.location, record.callNumber, record.title].map(normalizeText).join(" ");
     return text.includes("LARGE PRINT") || /^LP\b/.test(normalizeText(record.callNumber));
   }
 

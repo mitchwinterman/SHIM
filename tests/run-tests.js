@@ -59,12 +59,19 @@ const duplicateResult = shim.formatHolds(duplicateFixture);
 assert.strictEqual(duplicateResult.report.duplicateGroups.length, 1);
 assert.strictEqual(duplicateResult.groups.find((group) => group.name === "Other").items.length, 2);
 
-const specialFixture = `The road home / J E
+const itemTypeSpecialFixture = `The road home / J E
 
 Cotton, Katie,\tChildren's Picture Books\t\tBook Special Collections\tJ E COTTON 2017\t31235400818626 or any available\tSP Sparks Library\t04/29/2026`;
 
-const specialResult = shim.formatHolds(specialFixture);
-assert.strictEqual(specialResult.groups[0].name, "Special Collections");
+const itemTypeSpecialResult = shim.formatHolds(itemTypeSpecialFixture);
+assert.strictEqual(itemTypeSpecialResult.groups[0].name, "Picture Books/Easy Readers");
+
+const locationSpecialFixture = `Local history item / 979.3
+
+Author Name\tAdult Nonfiction\tSpecial Collections Shelf\tBook\t979.3 AUTHOR 2020\t31235400818627 or any available\tSP Sparks Library\t04/29/2026`;
+
+const locationSpecialResult = shim.formatHolds(locationSpecialFixture);
+assert.strictEqual(locationSpecialResult.groups[0].name, "Special Collections");
 
 const languageFixture = `La piñata que la campesina colgó / SPANISH J E
 
