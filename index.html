@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SHIM - Format HOLDS List</title>
+    <link rel="stylesheet" href="css/styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">SHIM</p>
+        <h1>Shelf-aware Holds Interpretation Module</h1>
+      </div>
+      <div class="header-mark" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+    </header>
+
+    <main>
+      <section id="paste-screen" class="workspace">
+        <div class="section-heading">
+          <h2>Format HOLDS List</h2>
+          <p>Paste copied Koha holds queue text.</p>
+        </div>
+
+        <label class="input-label" for="koha-input">Koha holds queue text</label>
+        <textarea id="koha-input" spellcheck="false" autocomplete="off"></textarea>
+
+        <div class="actions">
+          <button id="format-button" class="primary-button" type="button">Format HOLDS List</button>
+          <button id="clear-button" class="secondary-button" type="button">Clear</button>
+        </div>
+      </section>
+
+      <section id="results-screen" class="workspace is-hidden" aria-live="polite">
+        <div class="results-toolbar">
+          <div>
+            <p class="eyebrow">Formatted HOLDS List</p>
+            <h2 id="results-title">Verification</h2>
+          </div>
+          <div class="actions">
+            <button id="print-button" class="primary-button" type="button">Print</button>
+            <button id="new-paste-button" class="secondary-button" type="button">New Paste</button>
+          </div>
+        </div>
+
+        <section id="verification-report" class="report" aria-label="Verification report"></section>
+        <section id="warnings-report" class="warnings is-hidden" aria-label="Warnings"></section>
+        <section id="holds-output" class="holds-output" aria-label="Formatted holds list"></section>
+      </section>
+    </main>
+
+    <script src="js/profile.js"></script>
+    <script src="js/core.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

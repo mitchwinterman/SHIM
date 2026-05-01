@@ -1,0 +1,9 @@
+{
+  "name": "shim-holds-list",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SHIM static browser MVP for formatting Koha holds queues.",
+  "scripts": {
+    "test": "node tests/run-tests.js"
+  }
+}
