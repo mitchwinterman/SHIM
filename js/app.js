@@ -10,6 +10,7 @@
     clearButton: document.getElementById("clear-button"),
     printButton: document.getElementById("print-button"),
     newPasteButton: document.getElementById("new-paste-button"),
+    printPageStyle: document.getElementById("print-page-style"),
     report: document.getElementById("verification-report"),
     warnings: document.getElementById("warnings-report"),
     output: document.getElementById("holds-output")
@@ -29,8 +30,11 @@
   });
 
   elements.printButton.addEventListener("click", () => {
+    updatePrintPageStyle();
     window.print();
   });
+
+  window.addEventListener("beforeprint", updatePrintPageStyle);
 
   elements.newPasteButton.addEventListener("click", () => {
     elements.resultsScreen.classList.add("is-hidden");
@@ -55,6 +59,7 @@
       : `Review counts: ${report.estimatedInputCount} input holds, ${report.parsedCount} parsed, ${report.outputCount} output.`;
 
     elements.report.replaceChildren(
+      el("div", { className: `print-summary ${statusClass}` }, statusText),
       metric(String(report.estimatedInputCount), "Estimated input"),
       metric(String(report.parsedCount), "Parsed holds"),
       metric(String(report.outputCount), "Output rows"),
@@ -124,6 +129,7 @@
       el("table", {},
         el("thead", {},
           el("tr", {},
+            el("th", { className: "check-cell" }, ""),
             el("th", { className: "title-cell" }, "Title"),
             el("th", { className: "author-cell" }, "Author"),
             el("th", { className: "call-cell" }, "Call number"),
@@ -143,12 +149,49 @@
     }
 
     return el("tr", {},
+      el("td", { className: "check-cell" }, el("span", { className: "checkbox", "aria-hidden": "true" }, "")),
       titleCell,
       el("td", { className: "author-cell" }, record.author || ""),
       el("td", { className: "call-cell" }, record.callNumber || ""),
       el("td", { className: "barcode-cell" }, record.barcodeText || record.barcode || ""),
       el("td", { className: "type-cell" }, record.itemType || "")
     );
+  }
+
+  function updatePrintPageStyle() {
+    const printedAt = new Intl.DateTimeFormat(undefined, {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    }).format(new Date());
+
+    const safeDate = printedAt.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
+    elements.printPageStyle.textContent = `
+      @page {
+        size: auto;
+        margin: 0.42in 0.35in 0.46in;
+        @top-left {
+          content: "SHIM HOLDS List";
+          font-family: Arial, sans-serif;
+          font-size: 8pt;
+          color: #555555;
+        }
+        @top-right {
+          content: "Printed ${safeDate}";
+          font-family: Arial, sans-serif;
+          font-size: 8pt;
+          color: #555555;
+        }
+        @bottom-right {
+          content: "Page " counter(page) " of " counter(pages);
+          font-family: Arial, sans-serif;
+          font-size: 8pt;
+          color: #555555;
+        }
+      }
+    `;
   }
 
   function totalWarningCount(report) {

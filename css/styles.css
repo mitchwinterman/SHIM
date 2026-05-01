@@ -175,6 +175,10 @@ button {
   margin: 0 0 16px;
 }
 
+.print-summary {
+  display: none;
+}
+
 .metric {
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -283,8 +287,22 @@ td {
   overflow-wrap: anywhere;
 }
 
+.check-cell {
+  width: 4%;
+  text-align: center;
+}
+
+.checkbox {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #526168;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
 .title-cell {
-  width: 32%;
+  width: 30%;
   font-weight: 750;
 }
 
@@ -339,15 +357,17 @@ td {
 @media print {
   :root {
     --ink: #000000;
-    --line: #bbbbbb;
+    --line: #c8c8c8;
   }
 
   body {
     background: #ffffff;
+    font-family: Arial, sans-serif;
   }
 
   .app-header,
   #paste-screen,
+  .results-toolbar,
   .results-toolbar .actions,
   .warnings:empty {
     display: none !important;
@@ -365,32 +385,134 @@ td {
   }
 
   .report {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    margin-bottom: 12px;
+    display: block;
+    margin: 0 0 7px;
   }
 
   .metric,
-  .status,
+  .status {
+    display: none;
+  }
+
+  .print-summary {
+    display: block;
+    border: 1px solid #888888;
+    padding: 3px 5px;
+    color: #000000;
+    background: #ffffff;
+    font-size: 8.5pt;
+    font-weight: 700;
+  }
+
   .warnings {
-    border-color: #bbbbbb;
+    margin: 0 0 8px;
+    border-color: #999999;
+    padding: 5px 7px;
     background: #ffffff;
     color: #000000;
+    font-size: 8pt;
+  }
+
+  .warnings h3 {
+    margin-bottom: 3px;
+    font-size: 9pt;
+  }
+
+  .warnings ul {
+    padding-left: 14px;
+  }
+
+  .warnings li + li {
+    margin-top: 1px;
   }
 
   .holds-output {
-    gap: 14px;
+    display: block;
   }
 
   .holds-group {
+    break-inside: auto;
+    page-break-inside: auto;
+    border-top-color: #000000;
+    border-top-width: 1.5px;
+    padding-top: 3px;
+    margin-top: 8px;
+  }
+
+  .holds-group h3 {
+    margin-bottom: 2px;
+    font-size: 10pt;
+    line-height: 1.05;
+  }
+
+  .group-count {
+    font-size: 8pt;
+    color: #333333;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
     break-inside: avoid;
     page-break-inside: avoid;
-    border-top-color: #000000;
   }
 
   th,
   td {
-    padding: 5px 4px;
-    font-size: 10pt;
+    padding: 2px 3px;
+    font-size: 8.4pt;
+    line-height: 1.12;
+  }
+
+  th {
+    font-size: 7pt;
+    color: #333333;
+  }
+
+  .check-cell {
+    width: 3.2%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .checkbox {
+    width: 10px;
+    height: 10px;
+    border: 1px solid #000000;
+    border-radius: 0;
+  }
+
+  .title-cell {
+    width: 31%;
+  }
+
+  .author-cell {
+    width: 17%;
+  }
+
+  .call-cell {
+    width: 23%;
+    font-size: 8pt;
+  }
+
+  .barcode-cell {
+    width: 17%;
+    font-size: 7.8pt;
+  }
+
+  .type-cell {
+    width: 8.8%;
+    font-size: 7.8pt;
+  }
+
+  .row-note {
+    margin-top: 1px;
+    font-size: 7pt;
   }
 }
