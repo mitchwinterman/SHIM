@@ -153,9 +153,28 @@
       titleCell,
       el("td", { className: "author-cell" }, record.author || ""),
       el("td", { className: "call-cell" }, record.callNumber || ""),
-      el("td", { className: "barcode-cell" }, record.barcodeText || record.barcode || ""),
+      el("td", { className: "barcode-cell" }, renderBarcode(record)),
       el("td", { className: "type-cell" }, record.itemType || "")
     );
+  }
+
+  function renderBarcode(record) {
+    const text = record.barcodeText || record.barcode || "";
+    const match = text.match(/^(\d{14})(.*)$/);
+    if (!match) {
+      return text;
+    }
+
+    const suffix = match[2].trim();
+    if (!suffix) {
+      return match[1];
+    }
+
+    return [
+      el("span", { className: "barcode-number" }, match[1]),
+      " ",
+      el("span", { className: "availability-note" }, suffix)
+    ];
   }
 
   function updatePrintPageStyle() {
