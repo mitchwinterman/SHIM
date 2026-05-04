@@ -36,6 +36,8 @@
     const overrides = loadOverrides(storage);
     overrides[profileId] = {
       groupOrder: [...override.groupOrder],
+      disabledGroups: [...(override.disabledGroups || [])],
+      groupSortModes: { ...(override.groupSortModes || {}) },
       savedAt: new Date().toISOString()
     };
     writeStorage(storage, overridesKey, JSON.stringify(overrides));
@@ -57,6 +59,8 @@
       return {
         ...cloneProfile(profile),
         groupOrder: mergeGroupOrder(override.groupOrder, profile.groupOrder),
+        disabledGroups: sanitizeDisabledGroups(override.disabledGroups, profile.groupOrder),
+        groupSortModes: sanitizeSortModes(override.groupSortModes, profile.groupOrder),
         hasLocalOverride: true
       };
     });
@@ -66,7 +70,9 @@
     return JSON.stringify({
       profileId: profile.id,
       branchName: profile.branchName || profile.name,
-      groupOrder: profile.groupOrder
+      groupOrder: profile.groupOrder,
+      disabledGroups: profile.disabledGroups || [],
+      groupSortModes: profile.groupSortModes || {}
     }, null, 2);
   }
 
@@ -76,7 +82,9 @@
       throw new Error("Imported settings must include a groupOrder array.");
     }
     return {
-      groupOrder: mergeGroupOrder(parsed.groupOrder, profile.groupOrder)
+      groupOrder: mergeGroupOrder(parsed.groupOrder, profile.groupOrder),
+      disabledGroups: sanitizeDisabledGroups(parsed.disabledGroups, profile.groupOrder),
+      groupSortModes: sanitizeSortModes(parsed.groupSortModes, profile.groupOrder)
     };
   }
 
@@ -101,9 +109,34 @@
     for (const [key, value] of Object.entries(copy)) {
       if (Array.isArray(value)) {
         copy[key] = [...value];
+      } else if (value && typeof value === "object") {
+        copy[key] = { ...value };
       }
     }
     return copy;
+  }
+
+  function sanitizeDisabledGroups(groups, defaultOrder) {
+    if (!Array.isArray(groups)) {
+      return [];
+    }
+    const allowed = new Set(defaultOrder.filter((group) => group !== "Other"));
+    return groups.filter((group, index) => allowed.has(group) && groups.indexOf(group) === index);
+  }
+
+  function sanitizeSortModes(modes, defaultOrder) {
+    const allowedModes = new Set(["shelf", "raw-call", "title", "author", "barcode"]);
+    const allowedGroups = new Set(defaultOrder);
+    const result = {};
+    if (!modes || typeof modes !== "object") {
+      return result;
+    }
+    for (const [group, mode] of Object.entries(modes)) {
+      if (allowedGroups.has(group) && allowedModes.has(mode) && mode !== "shelf") {
+        result[group] = mode;
+      }
+    }
+    return result;
   }
 
   function readStorage(storage, key) {
@@ -135,6 +168,8 @@
     applyOverrides,
     exportOverride,
     importOverride,
-    mergeGroupOrder
+    mergeGroupOrder,
+    sanitizeDisabledGroups,
+    sanitizeSortModes
   };
 });

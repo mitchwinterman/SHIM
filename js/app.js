@@ -32,6 +32,9 @@
   let profiles = loadProfiles();
   let selectedProfileId = profileStore.loadSelectedProfileId(storage, shim.defaultProfileId);
   let editingGroupOrder = [];
+  let editingDisabledGroups = [];
+  let editingGroupSortModes = {};
+  let draggedGroup = "";
 
   renderBranchSelector();
   updateActiveBranch();
@@ -58,7 +61,11 @@
   });
 
   elements.saveSettingsButton.addEventListener("click", () => {
-    profileStore.saveOverride(storage, selectedProfileId, { groupOrder: editingGroupOrder });
+    profileStore.saveOverride(storage, selectedProfileId, {
+      groupOrder: editingGroupOrder,
+      disabledGroups: editingDisabledGroups,
+      groupSortModes: editingGroupSortModes
+    });
     refreshProfiles();
     closeSettings();
   });
@@ -72,7 +79,9 @@
   elements.exportSettingsButton.addEventListener("click", () => {
     elements.importSettingsText.value = profileStore.exportOverride({
       ...getSelectedProfile(),
-      groupOrder: editingGroupOrder
+      groupOrder: editingGroupOrder,
+      disabledGroups: editingDisabledGroups,
+      groupSortModes: editingGroupSortModes
     });
     elements.importSettingsText.focus();
     elements.importSettingsText.select();
@@ -82,6 +91,8 @@
     try {
       const imported = profileStore.importOverride(elements.importSettingsText.value, getSelectedProfile());
       editingGroupOrder = imported.groupOrder;
+      editingDisabledGroups = imported.disabledGroups;
+      editingGroupSortModes = imported.groupSortModes;
       renderGroupOrderEditor();
     } catch (error) {
       elements.importSettingsText.focus();
@@ -137,7 +148,9 @@
   function openSettings() {
     const selected = getSelectedProfile();
     editingGroupOrder = [...selected.groupOrder];
-    elements.settingsTitle.textContent = `${selected.branchName || selected.name} sorting order`;
+    editingDisabledGroups = [...(selected.disabledGroups || [])];
+    editingGroupSortModes = { ...(selected.groupSortModes || {}) };
+    elements.settingsTitle.textContent = `${selected.branchName || selected.name} sorting settings`;
     elements.importSettingsText.value = "";
     renderGroupOrderEditor();
     elements.settingsModal.classList.remove("is-hidden");
@@ -151,6 +164,22 @@
 
   function renderGroupOrderEditor() {
     elements.groupOrderList.replaceChildren(...editingGroupOrder.map((group, index) => {
+      const isOther = group === "Other";
+      const isEnabled = isOther || !editingDisabledGroups.includes(group);
+      const dragHandle = el("span", { className: "drag-handle", "aria-hidden": "true" }, "Drag");
+      const enabledCheckbox = el("input", {
+        type: "checkbox",
+        checked: isEnabled,
+        disabled: isOther,
+        "aria-label": `Include ${group}`
+      });
+      const sortSelect = el("select", { "aria-label": `Item sort for ${group}` },
+        el("option", { value: "shelf" }, "Shelf logic"),
+        el("option", { value: "raw-call" }, "Raw call number"),
+        el("option", { value: "title" }, "Title"),
+        el("option", { value: "author" }, "Author"),
+        el("option", { value: "barcode" }, "Barcode")
+      );
       const upButton = el("button", {
         className: "move-button",
         type: "button",
@@ -164,11 +193,52 @@
 
       upButton.addEventListener("click", () => moveGroup(index, -1));
       downButton.addEventListener("click", () => moveGroup(index, 1));
+      enabledCheckbox.addEventListener("change", () => {
+        setGroupEnabled(group, enabledCheckbox.checked);
+      });
+      sortSelect.value = editingGroupSortModes[group] || "shelf";
+      sortSelect.addEventListener("change", () => {
+        setGroupSortMode(group, sortSelect.value);
+      });
 
-      return el("li", { className: "group-order-item" },
-        el("span", { className: "group-order-name" }, group),
-        el("div", { className: "group-order-actions" }, upButton, downButton)
+      const row = el("li", {
+        className: isEnabled ? "group-order-item" : "group-order-item is-disabled",
+        draggable: "true",
+        "data-group": group
+      },
+        el("div", { className: "group-order-main" },
+          dragHandle,
+          el("label", { className: "group-toggle" },
+            enabledCheckbox,
+            el("span", { className: "group-order-name" }, group)
+          )
+        ),
+        el("div", { className: "group-order-actions" },
+          el("label", { className: "sort-mode-label" }, "Items", sortSelect),
+          upButton,
+          downButton
+        )
       );
+      row.addEventListener("dragstart", (event) => {
+        draggedGroup = group;
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", group);
+        row.classList.add("is-dragging");
+      });
+      row.addEventListener("dragend", () => {
+        draggedGroup = "";
+        row.classList.remove("is-dragging");
+      });
+      row.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      });
+      row.addEventListener("drop", (event) => {
+        event.preventDefault();
+        const source = draggedGroup || event.dataTransfer.getData("text/plain");
+        moveGroupTo(source, group);
+      });
+      return row;
     }));
   }
 
@@ -182,6 +252,44 @@
     next.splice(targetIndex, 0, group);
     editingGroupOrder = next;
     renderGroupOrderEditor();
+  }
+
+  function moveGroupTo(sourceGroup, targetGroup) {
+    if (!sourceGroup || sourceGroup === targetGroup) {
+      return;
+    }
+    const sourceIndex = editingGroupOrder.indexOf(sourceGroup);
+    const targetIndex = editingGroupOrder.indexOf(targetGroup);
+    if (sourceIndex < 0 || targetIndex < 0) {
+      return;
+    }
+    const next = [...editingGroupOrder];
+    const [group] = next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, group);
+    editingGroupOrder = next;
+    renderGroupOrderEditor();
+  }
+
+  function setGroupEnabled(group, enabled) {
+    if (group === "Other") {
+      return;
+    }
+    const disabled = new Set(editingDisabledGroups);
+    if (enabled) {
+      disabled.delete(group);
+    } else {
+      disabled.add(group);
+    }
+    editingDisabledGroups = Array.from(disabled);
+    renderGroupOrderEditor();
+  }
+
+  function setGroupSortMode(group, mode) {
+    if (mode === "shelf") {
+      delete editingGroupSortModes[group];
+    } else {
+      editingGroupSortModes[group] = mode;
+    }
   }
 
   elements.printButton.addEventListener("click", () => {

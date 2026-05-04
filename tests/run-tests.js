@@ -106,16 +106,46 @@ const reorderedResult = shim.formatHolds(fixture, customProfile);
 assert.strictEqual(reorderedResult.groups[0].name, "Early Readers");
 assert.strictEqual(reorderedResult.groups[1].name, "BluRays and DVDs");
 
+assert.strictEqual(shim.getProfiles().length, 13);
+assert.ok(shim.getProfiles().some((profile) => profile.id === "verdi"));
+
+const disabledNevadaProfile = shim.resolveProfile("mvp");
+disabledNevadaProfile.disabledGroups = ["Nevada Collection"];
+const nevadaBioFixture = `Nevada biography / BIO
+
+Historian, Local\tAdult Nonfiction\tNevada Room\tBook\tBIO SMITH 2020\t31235000000001 or any available\tRN Downtown Reno Library\t05/01/2026`;
+const disabledNevadaResult = shim.formatHolds(nevadaBioFixture, disabledNevadaProfile);
+assert.strictEqual(disabledNevadaResult.groups[0].name, "Biography");
+
+const titleSortProfile = shim.resolveProfile("mvp");
+titleSortProfile.groupSortModes = { "Adult Fiction": "title" };
+const titleSortFixture = `2 items found for Test Library
+Zoo story / FICTION
+
+Author One\tAdult Fiction\t\tBook\tFICTION ALPHA 2020\t31235000000002 or any available\tRN Downtown Reno Library\t05/01/2026
+Apple story / FICTION
+
+Author Two\tAdult Fiction\t\tBook\tFICTION ZULU 2021\t31235000000003 or any available\tRN Downtown Reno Library\t05/01/2026`;
+const titleSortResult = shim.formatHolds(titleSortFixture, titleSortProfile);
+assert.deepStrictEqual(titleSortResult.groups[0].items.map((record) => record.title), [
+  "Apple story / FICTION",
+  "Zoo story / FICTION"
+]);
+
 const store = createMemoryStorage();
 profileStore.saveSelectedProfileId(store, "sparks");
 assert.strictEqual(profileStore.loadSelectedProfileId(store, "mvp"), "sparks");
 
 profileStore.saveOverride(store, "mvp", {
-  groupOrder: ["Other", "Early Readers"]
+  groupOrder: ["Other", "Early Readers"],
+  disabledGroups: ["Nevada Collection"],
+  groupSortModes: { "Adult Fiction": "title" }
 });
 let profiles = profileStore.applyOverrides([shim.resolveProfile("mvp")], profileStore.loadOverrides(store));
 assert.strictEqual(profiles[0].groupOrder[0], "Other");
 assert.strictEqual(profiles[0].groupOrder[1], "Early Readers");
+assert.deepStrictEqual(profiles[0].disabledGroups, ["Nevada Collection"]);
+assert.strictEqual(profiles[0].groupSortModes["Adult Fiction"], "title");
 assert.strictEqual(profiles[0].hasLocalOverride, true);
 
 const exported = profileStore.exportOverride(profiles[0]);

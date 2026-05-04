@@ -104,6 +104,8 @@
     for (const [key, value] of Object.entries(copy)) {
       if (Array.isArray(value)) {
         copy[key] = [...value];
+      } else if (value && typeof value === "object") {
+        copy[key] = { ...value };
       }
     }
     return copy;
@@ -376,82 +378,161 @@
   function classifyRecord(record) {
     const text = recordText(record);
     const collection = normalizeText(record.collection);
-    const call = normalizeText(record.callNumber);
 
     if (record.reviewReasons.length > 0) {
       return "Other";
     }
     if (isSpecial(record)) {
-      return "Special Collections";
+      const group = chooseGroup(["Special Collections"]);
+      if (group) {
+        return group;
+      }
     }
     if (isDvdOrBluRay(record)) {
-      return "BluRays and DVDs";
+      const group = chooseGroup(["BluRays and DVDs"]);
+      if (group) {
+        return group;
+      }
     }
     if (isMusicCd(record)) {
-      return "Music CDs";
+      const group = chooseGroup(["Music CDs"]);
+      if (group) {
+        return group;
+      }
     }
     if (isAudiobookCd(record)) {
-      return "Audiobook CDs";
+      const group = chooseGroup(["Audiobook CDs"]);
+      if (group) {
+        return group;
+      }
     }
     if (isNevada(record)) {
-      return "Nevada Collection";
+      const group = chooseGroup(["Nevada Collection"]);
+      if (group) {
+        return group;
+      }
     }
     if (isWorldLanguage(record)) {
-      return isChildOrYa(record) ? "Children's World Language" : "Adult World Language";
+      const group = chooseGroup([isChildOrYa(record) ? "Children's World Language" : "Adult World Language"]);
+      if (group) {
+        return group;
+      }
     }
 
     if (isLargePrint(record)) {
       if (isNew(record)) {
-        return "NEW Large Print";
+        const group = chooseGroup(["NEW Large Print"]);
+        if (group) {
+          return group;
+        }
       }
       if (isAdultFictionLike(record)) {
-        return "Large Print Fiction";
+        const group = chooseGroup(["Large Print Fiction", "Adult Fiction"]);
+        if (group) {
+          return group;
+        }
       }
       if (isAdultBiography(record)) {
-        return "Biography";
+        const group = chooseGroup(["Biography"]);
+        if (group) {
+          return group;
+        }
       }
       if (isAdultNonfictionLike(record)) {
-        return "Adult Nonfiction";
+        const group = chooseGroup(["Adult Nonfiction"]);
+        if (group) {
+          return group;
+        }
       }
     }
 
     if (isAdultBiography(record)) {
-      return isNew(record) ? "New Adult Biography" : "Biography";
+      const group = chooseGroup(isNew(record) ? ["New Adult Biography", "Biography"] : ["Biography"]);
+      if (group) {
+        return group;
+      }
     }
     if (isAdultFictionLike(record)) {
-      return isNew(record) ? "New Adult Fiction" : "Adult Fiction";
+      const group = chooseGroup(isNew(record) ? ["New Adult Fiction", "Adult Fiction"] : ["Adult Fiction"]);
+      if (group) {
+        return group;
+      }
     }
     if (isAdultNonfictionLike(record)) {
-      return isNew(record) ? "New Adult Nonfiction" : "Adult Nonfiction";
+      const group = chooseGroup(isNew(record) ? ["New Adult Nonfiction", "Adult Nonfiction"] : ["Adult Nonfiction"]);
+      if (group) {
+        return group;
+      }
     }
     if (isYa(record)) {
-      if (isNew(record)) {
-        return "New YA";
+      const group = chooseGroup(isNew(record)
+        ? ["New YA", isYaNonfiction(record) ? "YA Nonfiction" : "YA Fiction"]
+        : [isYaNonfiction(record) ? "YA Nonfiction" : "YA Fiction"]);
+      if (group) {
+        return group;
       }
-      return isYaNonfiction(record) ? "YA Nonfiction" : "YA Fiction";
     }
     if (collection === "CHILDREN'S BOARD BOOKS") {
-      return "Board Books";
+      const group = chooseGroup(["Board Books"]);
+      if (group) {
+        return group;
+      }
     }
     if (isEarlyReader(record)) {
-      return "Early Readers";
+      const group = chooseGroup(["Early Readers", "Picture Books/Easy Readers"]);
+      if (group) {
+        return group;
+      }
     }
     if (isPictureBook(record)) {
-      return "Picture Books/Easy Readers";
+      const group = chooseGroup(["Picture Books/Easy Readers"]);
+      if (group) {
+        return group;
+      }
     }
     if (isChildrenNonfiction(record)) {
-      return "Children's NONFiction";
+      const group = chooseGroup(["Children's NONFiction"]);
+      if (group) {
+        return group;
+      }
     }
     if (isChildrenFiction(record)) {
-      return isNew(record) ? "NEW Children's Fiction" : "Children's Fiction";
+      const group = chooseGroup(isNew(record) ? ["NEW Children's Fiction", "Children's Fiction"] : ["Children's Fiction"]);
+      if (group) {
+        return group;
+      }
     }
 
     record.reviewReasons.push(`No configured group matched ${text}`);
     return "Other";
   }
 
+  function chooseGroup(candidates) {
+    return candidates.find((group) => isGroupEnabled(group)) || "";
+  }
+
+  function isGroupEnabled(group) {
+    if (group === "Other") {
+      return true;
+    }
+    return !(profile.disabledGroups || []).includes(group);
+  }
+
   function buildSortKey(record) {
     const group = record.group;
+    const sortMode = profile.groupSortModes && profile.groupSortModes[group];
+    if (sortMode === "title") {
+      return normalizeTitle(record.title);
+    }
+    if (sortMode === "author") {
+      return `${normalizeText(record.author)} ${normalizeTitle(record.title)}`;
+    }
+    if (sortMode === "barcode") {
+      return record.barcode || "";
+    }
+    if (sortMode === "raw-call") {
+      return normalizeText(record.callNumber) || normalizeTitle(record.title);
+    }
     if (group === "BluRays and DVDs") {
       return stripDvdPrefix(record.callNumber) || normalizeTitle(record.title);
     }

@@ -279,6 +279,41 @@ button:disabled {
   background: #fbfdfd;
 }
 
+.group-order-item.is-disabled {
+  background: #f1f5f6;
+  color: var(--muted);
+}
+
+.group-order-item.is-dragging {
+  opacity: 0.62;
+}
+
+.group-order-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.drag-handle {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border: 1px solid #c8d5d8;
+  border-radius: 4px;
+  color: var(--muted);
+  background: #edf3f4;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: grab;
+}
+
+.group-toggle {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+
 .group-order-name {
   font-weight: 700;
 }
@@ -286,7 +321,28 @@ button:disabled {
 .group-order-actions {
   display: flex;
   flex: 0 0 auto;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
+}
+
+.sort-mode-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.sort-mode-label select {
+  min-height: 32px;
+  border: 1px solid #c8d5d8;
+  border-radius: 6px;
+  padding: 0 8px;
+  color: var(--ink);
+  background: #ffffff;
+  font: inherit;
 }
 
 .move-button {

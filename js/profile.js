@@ -39,6 +39,8 @@
     name: "Washoe County Library System MVP",
     branchName: "MVP",
     groupOrder,
+    disabledGroups: [],
+    groupSortModes: {},
     defaultGroup: "Other",
     enabledRules: {
       separateEarlyReaders: true,
@@ -118,29 +120,32 @@
     ]
   };
 
+  const branchProfiles = [
+    ["downtown-reno", "Downtown Reno Library"],
+    ["duncan-traner", "Duncan/Traner Community Library"],
+    ["gerlach", "Gerlach Community Library"],
+    ["incline-village", "Incline Village Library"],
+    ["north-valleys", "North Valleys Library"],
+    ["northwest-reno", "Northwest Reno Library"],
+    ["senior-center", "Senior Center Library"],
+    ["sierra-view", "Sierra View Library"],
+    ["south-valleys", "South Valleys Library"],
+    ["spanish-springs", "Spanish Springs Library"],
+    ["sparks", "Sparks Library"],
+    ["verdi", "Verdi Community Library & Nature Center"]
+  ];
+
   const profiles = [
     baseProfile,
-    {
+    ...branchProfiles.map(([id, name]) => ({
       ...baseProfile,
-      id: "downtown-reno",
-      name: "Downtown Reno",
-      branchName: "Downtown Reno",
-      groupOrder: [...baseProfile.groupOrder]
-    },
-    {
-      ...baseProfile,
-      id: "sparks",
-      name: "Sparks",
-      branchName: "Sparks",
-      groupOrder: [...baseProfile.groupOrder]
-    },
-    {
-      ...baseProfile,
-      id: "spanish-springs",
-      name: "Spanish Springs",
-      branchName: "Spanish Springs",
-      groupOrder: [...baseProfile.groupOrder]
-    }
+      id,
+      name,
+      branchName: name,
+      groupOrder: [...baseProfile.groupOrder],
+      disabledGroups: [],
+      groupSortModes: {}
+    }))
   ];
 
   return {

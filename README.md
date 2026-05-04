@@ -35,10 +35,10 @@ SHIM supports selectable branch profiles for experimenting with branch-specific 
 - The current MVP sorting profile remains the default.
 - Staff can select a branch profile above the paste box.
 - SHIM remembers the last selected branch in the browser.
-- The settings panel allows group-order changes only for the current experiment.
+- The settings panel allows drag-and-drop group ordering, category combining, and per-group item sort settings.
 - Saved settings are stored in that browser through localStorage.
 - Export/import JSON can move a tested group order between workstations or into repo config later.
-- Full grouping-rule editing is intentionally out of scope for this first experiment.
+- Turning off a category makes matching items continue through the remaining grouping rules until they land in the next matching group or `Other`.
 
 ## Current MVP Behavior
 
