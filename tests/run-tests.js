@@ -1,5 +1,6 @@
 const assert = require("assert");
 const shim = require("../js/core");
+const profileStore = require("../js/profileStore");
 
 const fixture = `Koha
 Circulation
@@ -94,4 +95,48 @@ assert.deepStrictEqual(musicResult.groups[0].items.map((record) => record.callNu
   "CD/RAP/HIP-HOP MACHIN 2025"
 ]);
 
+const customProfile = shim.resolveProfile("mvp");
+customProfile.id = "test-reordered";
+customProfile.groupOrder = profileStore.mergeGroupOrder([
+  "Early Readers",
+  "BluRays and DVDs",
+  ...customProfile.groupOrder
+], customProfile.groupOrder);
+const reorderedResult = shim.formatHolds(fixture, customProfile);
+assert.strictEqual(reorderedResult.groups[0].name, "Early Readers");
+assert.strictEqual(reorderedResult.groups[1].name, "BluRays and DVDs");
+
+const store = createMemoryStorage();
+profileStore.saveSelectedProfileId(store, "sparks");
+assert.strictEqual(profileStore.loadSelectedProfileId(store, "mvp"), "sparks");
+
+profileStore.saveOverride(store, "mvp", {
+  groupOrder: ["Other", "Early Readers"]
+});
+let profiles = profileStore.applyOverrides([shim.resolveProfile("mvp")], profileStore.loadOverrides(store));
+assert.strictEqual(profiles[0].groupOrder[0], "Other");
+assert.strictEqual(profiles[0].groupOrder[1], "Early Readers");
+assert.strictEqual(profiles[0].hasLocalOverride, true);
+
+const exported = profileStore.exportOverride(profiles[0]);
+const imported = profileStore.importOverride(exported, shim.resolveProfile("mvp"));
+assert.strictEqual(imported.groupOrder[0], "Other");
+
+profileStore.resetOverride(store, "mvp");
+profiles = profileStore.applyOverrides([shim.resolveProfile("mvp")], profileStore.loadOverrides(store));
+assert.strictEqual(profiles[0].groupOrder[0], "New Adult Fiction");
+assert.strictEqual(Boolean(profiles[0].hasLocalOverride), false);
+
 console.log("All SHIM tests passed.");
+
+function createMemoryStorage() {
+  const values = new Map();
+  return {
+    getItem(key) {
+      return values.has(key) ? values.get(key) : null;
+    },
+    setItem(key, value) {
+      values.set(key, String(value));
+    }
+  };
+}

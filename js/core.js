@@ -8,7 +8,7 @@
   } else {
     root.SHIM = api;
   }
-})(typeof globalThis !== "undefined" ? globalThis : this, function createCore(profile) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createCore(profileRegistry) {
   "use strict";
 
   const datePattern = /\b\d{1,2}\/\d{1,2}\/\d{4}\b/;
@@ -19,12 +19,14 @@
     ignorePunctuation: true
   });
 
-  const collectionLookup = new Map(
-    profile.knownCollections.map((name) => [normalizeText(name), name])
-  );
-  const groupRank = new Map(profile.groupOrder.map((group, index) => [group, index]));
+  const builtInProfiles = normalizeProfileRegistry(profileRegistry);
+  const defaultProfileId = profileRegistry.defaultProfileId || builtInProfiles[0].id;
+  let profile = resolveProfile(defaultProfileId);
+  let collectionLookup = buildCollectionLookup(profile);
+  let groupRank = buildGroupRank(profile);
 
-  function formatHolds(rawText) {
+  function formatHolds(rawText, profileInput) {
+    setActiveProfile(profileInput);
     const parseResult = parseHolds(rawText);
     const records = parseResult.records.map((record, index) => ({
       ...record,
@@ -54,6 +56,57 @@
       groups,
       report
     };
+  }
+
+  function setActiveProfile(profileInput) {
+    profile = resolveProfile(profileInput);
+    collectionLookup = buildCollectionLookup(profile);
+    groupRank = buildGroupRank(profile);
+  }
+
+  function resolveProfile(profileInput) {
+    if (!profileInput) {
+      return cloneProfile(builtInProfiles.find((item) => item.id === defaultProfileId) || builtInProfiles[0]);
+    }
+    if (typeof profileInput === "string") {
+      return cloneProfile(builtInProfiles.find((item) => item.id === profileInput) || builtInProfiles[0]);
+    }
+    if (profileInput.id && profileInput.groupOrder) {
+      return cloneProfile(profileInput);
+    }
+    return cloneProfile(builtInProfiles[0]);
+  }
+
+  function getProfiles() {
+    return builtInProfiles.map(cloneProfile);
+  }
+
+  function normalizeProfileRegistry(registry) {
+    if (Array.isArray(registry)) {
+      return registry.map(cloneProfile);
+    }
+    if (registry && Array.isArray(registry.profiles)) {
+      return registry.profiles.map(cloneProfile);
+    }
+    return [cloneProfile(registry)];
+  }
+
+  function buildCollectionLookup(activeProfile) {
+    return new Map(activeProfile.knownCollections.map((name) => [normalizeText(name), name]));
+  }
+
+  function buildGroupRank(activeProfile) {
+    return new Map(activeProfile.groupOrder.map((group, index) => [group, index]));
+  }
+
+  function cloneProfile(source) {
+    const copy = { ...source };
+    for (const [key, value] of Object.entries(copy)) {
+      if (Array.isArray(value)) {
+        copy[key] = [...value];
+      }
+    }
+    return copy;
   }
 
   function parseHolds(rawText) {
@@ -769,6 +822,9 @@
 
   return {
     profile,
+    defaultProfileId,
+    getProfiles,
+    resolveProfile,
     formatHolds,
     parseHolds,
     classifyRecord,

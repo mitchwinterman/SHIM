@@ -4,16 +4,41 @@ SHIM is a dependency-free static browser MVP for converting copied Koha holds qu
 
 The app does not change Koha and does not save pasted data. Staff paste a copied holds queue, click `Format HOLDS List`, verify counts/warnings, print the list, then use `New Paste` for the next queue.
 
+## Sorting Holds Brief
+
+- Turns a copied Koha holds queue into a printable shelf-pull list.
+- Groups holds by the shelf areas staff actually work through, such as new adult materials, fiction, nonfiction, YA, children's areas, media, world language, special collections, and `Other`.
+- Orders the groups in local shelf-walk order instead of Koha's original queue order.
+- Uses collection, shelving location, and call number to decide each item's group.
+- Keeps item type visible on the list, but does not use item type as the sorting rule.
+- Sorts items inside each group by cleaned shelf call number, with title and barcode as fallback tie-breakers.
+- Handles special cases for DVDs/Blu-rays, music CDs, audiobook CDs, biographies, world language, Nevada Collection, early readers, and new items.
+- Sends duplicate barcodes and unmatched-but-valid records to `Other` for staff review instead of dropping them.
+
 ## Use
 
 Open `index.html` in a browser.
 
 1. Copy the holds queue from Koha.
-2. Paste the copied text into SHIM.
-3. Click `Format HOLDS List`.
-4. Review the verification counts and warnings.
-5. Click `Print`.
-6. Click `New Paste` to clear the screen for another list.
+2. Select the branch profile that matches the local shelving workflow.
+3. Paste the copied text into SHIM.
+4. Click `Format HOLDS List`.
+5. Review the verification counts and warnings.
+6. Click `Print`.
+7. Click `New Paste` to clear the screen for another list.
+
+## Branch Profiles
+
+SHIM supports selectable branch profiles for experimenting with branch-specific shelf order.
+
+- Built-in profiles live in `js/profile.js`.
+- The current MVP sorting profile remains the default.
+- Staff can select a branch profile above the paste box.
+- SHIM remembers the last selected branch in the browser.
+- The settings panel allows group-order changes only for the current experiment.
+- Saved settings are stored in that browser through localStorage.
+- Export/import JSON can move a tested group order between workstations or into repo config later.
+- Full grouping-rule editing is intentionally out of scope for this first experiment.
 
 ## Current MVP Behavior
 

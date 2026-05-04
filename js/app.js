@@ -2,7 +2,11 @@
   "use strict";
 
   const shim = root.SHIM;
+  const profileStore = root.SHIM_PROFILE_STORE;
   const elements = {
+    activeBranchName: document.getElementById("active-branch-name"),
+    branchSelector: document.getElementById("branch-selector"),
+    branchSettingsButton: document.getElementById("branch-settings-button"),
     pasteScreen: document.getElementById("paste-screen"),
     resultsScreen: document.getElementById("results-screen"),
     input: document.getElementById("koha-input"),
@@ -13,11 +17,27 @@
     printPageStyle: document.getElementById("print-page-style"),
     report: document.getElementById("verification-report"),
     warnings: document.getElementById("warnings-report"),
-    output: document.getElementById("holds-output")
+    output: document.getElementById("holds-output"),
+    settingsModal: document.getElementById("settings-modal"),
+    settingsTitle: document.getElementById("settings-title"),
+    closeSettingsButton: document.getElementById("close-settings-button"),
+    groupOrderList: document.getElementById("group-order-list"),
+    saveSettingsButton: document.getElementById("save-settings-button"),
+    resetSettingsButton: document.getElementById("reset-settings-button"),
+    exportSettingsButton: document.getElementById("export-settings-button"),
+    importSettingsText: document.getElementById("import-settings-text"),
+    importSettingsButton: document.getElementById("import-settings-button")
   };
+  const storage = getStorage();
+  let profiles = loadProfiles();
+  let selectedProfileId = profileStore.loadSelectedProfileId(storage, shim.defaultProfileId);
+  let editingGroupOrder = [];
+
+  renderBranchSelector();
+  updateActiveBranch();
 
   elements.formatButton.addEventListener("click", () => {
-    const result = shim.formatHolds(elements.input.value);
+    const result = shim.formatHolds(elements.input.value, getSelectedProfile());
     renderResult(result);
     elements.pasteScreen.classList.add("is-hidden");
     elements.resultsScreen.classList.remove("is-hidden");
@@ -28,6 +48,141 @@
     elements.input.value = "";
     elements.input.focus();
   });
+
+  elements.branchSettingsButton.addEventListener("click", openSettings);
+  elements.closeSettingsButton.addEventListener("click", closeSettings);
+  elements.settingsModal.addEventListener("click", (event) => {
+    if (event.target === elements.settingsModal) {
+      closeSettings();
+    }
+  });
+
+  elements.saveSettingsButton.addEventListener("click", () => {
+    profileStore.saveOverride(storage, selectedProfileId, { groupOrder: editingGroupOrder });
+    refreshProfiles();
+    closeSettings();
+  });
+
+  elements.resetSettingsButton.addEventListener("click", () => {
+    profileStore.resetOverride(storage, selectedProfileId);
+    refreshProfiles();
+    openSettings();
+  });
+
+  elements.exportSettingsButton.addEventListener("click", () => {
+    elements.importSettingsText.value = profileStore.exportOverride({
+      ...getSelectedProfile(),
+      groupOrder: editingGroupOrder
+    });
+    elements.importSettingsText.focus();
+    elements.importSettingsText.select();
+  });
+
+  elements.importSettingsButton.addEventListener("click", () => {
+    try {
+      const imported = profileStore.importOverride(elements.importSettingsText.value, getSelectedProfile());
+      editingGroupOrder = imported.groupOrder;
+      renderGroupOrderEditor();
+    } catch (error) {
+      elements.importSettingsText.focus();
+    }
+  });
+
+  function loadProfiles() {
+    return profileStore.applyOverrides(shim.getProfiles(), profileStore.loadOverrides(storage));
+  }
+
+  function getStorage() {
+    try {
+      return root.localStorage;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function refreshProfiles() {
+    profiles = loadProfiles();
+    renderBranchSelector();
+    updateActiveBranch();
+  }
+
+  function getSelectedProfile() {
+    return profiles.find((profile) => profile.id === selectedProfileId) || profiles[0];
+  }
+
+  function renderBranchSelector() {
+    elements.branchSelector.replaceChildren(...profiles.map((profile) => {
+      const button = el("button", {
+        className: profile.id === selectedProfileId ? "branch-option is-selected" : "branch-option",
+        type: "button",
+        role: "radio",
+        "aria-checked": profile.id === selectedProfileId ? "true" : "false"
+      }, profile.branchName || profile.name);
+      button.addEventListener("click", () => {
+        selectedProfileId = profile.id;
+        profileStore.saveSelectedProfileId(storage, selectedProfileId);
+        renderBranchSelector();
+        updateActiveBranch();
+      });
+      return button;
+    }));
+  }
+
+  function updateActiveBranch() {
+    const selected = getSelectedProfile();
+    elements.activeBranchName.textContent = selected.branchName || selected.name;
+    elements.branchSettingsButton.textContent = selected.hasLocalOverride ? "Settings*" : "Settings";
+  }
+
+  function openSettings() {
+    const selected = getSelectedProfile();
+    editingGroupOrder = [...selected.groupOrder];
+    elements.settingsTitle.textContent = `${selected.branchName || selected.name} sorting order`;
+    elements.importSettingsText.value = "";
+    renderGroupOrderEditor();
+    elements.settingsModal.classList.remove("is-hidden");
+    elements.closeSettingsButton.focus();
+  }
+
+  function closeSettings() {
+    elements.settingsModal.classList.add("is-hidden");
+    elements.branchSettingsButton.focus();
+  }
+
+  function renderGroupOrderEditor() {
+    elements.groupOrderList.replaceChildren(...editingGroupOrder.map((group, index) => {
+      const upButton = el("button", {
+        className: "move-button",
+        type: "button",
+        disabled: index === 0
+      }, "Up");
+      const downButton = el("button", {
+        className: "move-button",
+        type: "button",
+        disabled: index === editingGroupOrder.length - 1
+      }, "Down");
+
+      upButton.addEventListener("click", () => moveGroup(index, -1));
+      downButton.addEventListener("click", () => moveGroup(index, 1));
+
+      return el("li", { className: "group-order-item" },
+        el("span", { className: "group-order-name" }, group),
+        el("div", { className: "group-order-actions" }, upButton, downButton)
+      );
+    }));
+  }
+
+  function moveGroup(index, offset) {
+    const targetIndex = index + offset;
+    if (targetIndex < 0 || targetIndex >= editingGroupOrder.length) {
+      return;
+    }
+    const next = [...editingGroupOrder];
+    const [group] = next.splice(index, 1);
+    next.splice(targetIndex, 0, group);
+    editingGroupOrder = next;
+    renderGroupOrderEditor();
+  }
 
   elements.printButton.addEventListener("click", () => {
     updatePrintPageStyle();
@@ -178,6 +333,7 @@
   }
 
   function updatePrintPageStyle() {
+    const selected = getSelectedProfile();
     const printedAt = new Intl.DateTimeFormat(undefined, {
       month: "2-digit",
       day: "2-digit",
@@ -187,12 +343,13 @@
     }).format(new Date());
 
     const safeDate = printedAt.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
+    const safeBranch = (selected.branchName || selected.name).replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
     elements.printPageStyle.textContent = `
       @page {
         size: auto;
         margin: 0.42in 0.35in 0.46in;
         @top-left {
-          content: "SHIM HOLDS List";
+          content: "SHIM HOLDS List - ${safeBranch}";
           font-family: Arial, sans-serif;
           font-size: 8pt;
           color: #555555;
@@ -233,6 +390,10 @@
     Object.entries(props || {}).forEach(([key, value]) => {
       if (key === "className") {
         node.className = value;
+      } else if (value === false || value === null || value === undefined) {
+        return;
+      } else if (value === true) {
+        node.setAttribute(key, "");
       } else {
         node.setAttribute(key, value);
       }

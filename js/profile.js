@@ -5,7 +5,7 @@
   } else {
     root.SHIM_PROFILE = profile;
   }
-})(typeof globalThis !== "undefined" ? globalThis : this, function createProfile() {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createProfileRegistry() {
   const groupOrder = [
     "New Adult Fiction",
     "New Adult Nonfiction",
@@ -34,10 +34,23 @@
     "Other"
   ];
 
-  return {
+  const baseProfile = {
+    id: "mvp",
     name: "Washoe County Library System MVP",
+    branchName: "MVP",
     groupOrder,
     defaultGroup: "Other",
+    enabledRules: {
+      separateEarlyReaders: true,
+      separateNewYa: true,
+      separateChildrenWorldLanguage: true,
+      combineDvdAndBluRay: true,
+      interfileLargePrintNonfiction: true
+    },
+    newItemBehavior: {
+      location: "New Arrivals Shelf",
+      ignoreNewForMediaAndChildrenNonfiction: true
+    },
     knownCollections: [
       "Adult Fiction",
       "Adult Nonfiction",
@@ -103,5 +116,35 @@
       "CHILDREN",
       "NEW AGE"
     ]
+  };
+
+  const profiles = [
+    baseProfile,
+    {
+      ...baseProfile,
+      id: "downtown-reno",
+      name: "Downtown Reno",
+      branchName: "Downtown Reno",
+      groupOrder: [...baseProfile.groupOrder]
+    },
+    {
+      ...baseProfile,
+      id: "sparks",
+      name: "Sparks",
+      branchName: "Sparks",
+      groupOrder: [...baseProfile.groupOrder]
+    },
+    {
+      ...baseProfile,
+      id: "spanish-springs",
+      name: "Spanish Springs",
+      branchName: "Spanish Springs",
+      groupOrder: [...baseProfile.groupOrder]
+    }
+  ];
+
+  return {
+    defaultProfileId: baseProfile.id,
+    profiles
   };
 });
