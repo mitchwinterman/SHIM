@@ -115,6 +115,13 @@ assert.strictEqual(shim.resolveProfile("sparks").groupOrder.at(-1), "Other");
 const seededBranchResult = shim.formatHolds(fixture, "sparks");
 assert.strictEqual(seededBranchResult.groups[0].name, "NEW Large Print");
 
+const languageDvdFixture = `The worst person in the world [DVD videorecording] / NORWEGIAN DVD VIDEO Criterion collection
+
+DVD / Blu-rays\t\tDVD 07 Day\tNORWEGIAN DVD VIDEO WORST\t31235499962582 or any available\tSSD Spanish Springs Drive-Up\t05/01/2026`;
+const languageDvdResult = shim.formatHolds(languageDvdFixture, "downtown-reno");
+assert.strictEqual(languageDvdResult.report.otherRecords.length, 0);
+assert.strictEqual(languageDvdResult.groups[0].name, "BluRays and DVDs");
+
 const disabledNevadaProfile = shim.resolveProfile("downtown-reno");
 disabledNevadaProfile.disabledGroups = ["Nevada Collection"];
 const nevadaBioFixture = `Nevada biography / BIO

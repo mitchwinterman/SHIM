@@ -840,28 +840,39 @@
   }
 
   function isAdultDvd(record) {
+    if (!isChildDvd(record) && isMediaCollection(record) && normalizeText(record.callNumber).includes("DVD")) {
+      return true;
+    }
     const call = normalizeText(record.callNumber);
-    return !isChildDvd(record) && /^DVD\b/.test(call);
+    return !isChildDvd(record) && (call.includes(" DVD ") || /^DVD\b/.test(call));
   }
 
   function isAdultBluRay(record) {
+    if (!isChildBluRay(record) && isMediaCollection(record) && /\bBLU-?RAY\b|\bBLURAY\b/.test(normalizeText(record.callNumber))) {
+      return true;
+    }
     const call = normalizeText(record.callNumber);
-    return !isChildBluRay(record) && (/^BLU-?RAY\b/.test(call) || /^BLURAY\b/.test(call));
+    return !isChildBluRay(record) && (/\bBLU-?RAY\b/.test(call) || /\bBLURAY\b/.test(call));
   }
 
   function isChildDvd(record) {
     const collection = normalizeText(record.collection);
     const call = normalizeText(record.callNumber);
-    return /^J\s+DVD\b/.test(call)
-      || (collection.includes("CHILDREN") && /^DVD\b/.test(call));
+    return /\bJ\s+DVD\b/.test(call)
+      || (collection.includes("CHILDREN") && /\bDVD\b/.test(call));
   }
 
   function isChildBluRay(record) {
     const collection = normalizeText(record.collection);
     const call = normalizeText(record.callNumber);
-    return /^J\s+BLU-?RAY\b/.test(call)
-      || /^J\s+BLURAY\b/.test(call)
-      || (collection.includes("CHILDREN") && (/^BLU-?RAY\b/.test(call) || /^BLURAY\b/.test(call)));
+    return /\bJ\s+BLU-?RAY\b/.test(call)
+      || /\bJ\s+BLURAY\b/.test(call)
+      || (collection.includes("CHILDREN") && (/\bBLU-?RAY\b/.test(call) || /\bBLURAY\b/.test(call)));
+  }
+
+  function isMediaCollection(record) {
+    const collection = normalizeText(record.collection);
+    return profile.mediaCollections.map(normalizeText).includes(collection);
   }
 
   function isMusicCd(record) {
