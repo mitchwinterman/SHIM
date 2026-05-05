@@ -168,22 +168,19 @@
   }
 
   function renderBranchSelector() {
-    elements.branchSelector.replaceChildren(...profiles.map((profile) => {
-      const button = el("button", {
-        className: profile.id === selectedProfileId ? "branch-option is-selected" : "branch-option",
-        type: "button",
-        role: "radio",
-        "aria-checked": profile.id === selectedProfileId ? "true" : "false"
-      }, profile.branchName || profile.name);
-      button.addEventListener("click", () => {
-        selectedProfileId = profile.id;
-        profileStore.saveSelectedProfileId(storage, selectedProfileId);
-        renderBranchSelector();
-        updateActiveBranch();
-      });
-      return button;
-    }));
+    elements.branchSelector.replaceChildren(...profiles.map((profile) => (
+      el("option", { value: profile.id }, profile.branchName || profile.name)
+    )));
+    elements.branchSelector.value = profiles.some((profile) => profile.id === selectedProfileId)
+      ? selectedProfileId
+      : shim.defaultProfileId;
   }
+
+  elements.branchSelector.addEventListener("change", () => {
+    selectedProfileId = elements.branchSelector.value;
+    profileStore.saveSelectedProfileId(storage, selectedProfileId);
+    updateActiveBranch();
+  });
 
   function updateActiveBranch() {
     const selected = getSelectedProfile();

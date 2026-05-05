@@ -18,12 +18,15 @@
 
     <main>
       <section class="branch-panel" aria-label="Branch profile selection">
-        <div>
+        <div class="branch-summary">
           <p class="eyebrow">Branch Profile</p>
           <h2 id="active-branch-name">MVP</h2>
         </div>
         <div class="branch-controls">
-          <div id="branch-selector" class="branch-selector" role="radiogroup" aria-label="Branch profiles"></div>
+          <label class="branch-select-label" for="branch-selector">
+            <span>Use profile</span>
+            <select id="branch-selector" aria-label="Branch profiles"></select>
+          </label>
           <button id="branch-settings-button" class="icon-button" type="button" aria-label="Open branch sorting settings">Settings</button>
         </div>
       </section>
