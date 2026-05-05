@@ -804,7 +804,7 @@
     elements.printPageStyle.textContent = `
       @page {
         size: auto;
-        margin: 0.42in 0.35in 0.46in;
+        margin: 0.62in 0.35in 0.68in;
         @top-left {
           content: "SHIM HOLDS List - ${safeBranch}";
           font-family: Arial, sans-serif;
