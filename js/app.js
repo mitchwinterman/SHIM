@@ -214,20 +214,13 @@
     elements.groupOrderList.replaceChildren(...editingGroupOrder.map((group, index) => {
       const isOther = group === "Other";
       const isEnabled = isOther || !editingDisabledGroups.includes(group);
-      const dragHandle = el("span", { className: "drag-handle", "aria-hidden": "true" }, "Drag");
+      const dragHandle = el("span", { className: "drag-handle", "aria-hidden": "true" }, isOther ? "Fixed" : "Drag");
       const enabledCheckbox = el("input", {
         type: "checkbox",
         checked: isEnabled,
         disabled: isOther,
         "aria-label": `Include ${group}`
       });
-      const sortSelect = el("select", { "aria-label": `Item sort for ${group}` },
-        el("option", { value: "shelf" }, "Shelf logic"),
-        el("option", { value: "raw-call" }, "Raw call number"),
-        el("option", { value: "title" }, "Title"),
-        el("option", { value: "author" }, "Author"),
-        el("option", { value: "barcode" }, "Barcode")
-      );
       const upButton = el("button", {
         className: "move-button",
         type: "button",
@@ -244,10 +237,6 @@
       enabledCheckbox.addEventListener("change", () => {
         setGroupEnabled(group, enabledCheckbox.checked);
       });
-      sortSelect.value = editingGroupSortModes[group] || "shelf";
-      sortSelect.addEventListener("change", () => {
-        setGroupSortMode(group, sortSelect.value);
-      });
 
       const rowClasses = [
         "group-order-item",
@@ -258,6 +247,8 @@
         className: "move-button",
         type: "button"
       }, group === "Other" ? "View" : "Edit");
+
+      const actionButtons = isOther ? [editButton] : [editButton, upButton, downButton];
 
       const row = el("li", {
         className: rowClasses,
@@ -272,10 +263,7 @@
           )
         ),
         el("div", { className: "group-order-actions" },
-          el("label", { className: "sort-mode-label" }, "Items", sortSelect),
-          editButton,
-          upButton,
-          downButton
+          ...actionButtons
         )
       );
       editButton.addEventListener("click", () => selectEditingGroup(group));
@@ -327,6 +315,17 @@
 
     const rule = getEditingRule(group);
     const settings = getEditingSortSettings(group);
+    const sortSelect = el("select", { "aria-label": `Item sort for ${group}` },
+      el("option", { value: "shelf" }, "Shelf logic"),
+      el("option", { value: "raw-call" }, "Raw call number"),
+      el("option", { value: "title" }, "Title"),
+      el("option", { value: "author" }, "Author"),
+      el("option", { value: "barcode" }, "Barcode")
+    );
+    sortSelect.value = editingGroupSortModes[group] || "shelf";
+    sortSelect.addEventListener("change", () => {
+      setGroupSortMode(group, sortSelect.value);
+    });
     const matchOptions = categoryLibrary.map((category) => {
       const checkbox = el("input", {
         type: "checkbox",
@@ -389,6 +388,10 @@
         removeButton
       ),
       el("p", { className: "settings-note" }, "Check every signal that should go into this category. The first enabled category that matches an item wins."),
+      el("label", { className: "settings-field settings-field-compact" },
+        "Items sorted by",
+        sortSelect
+      ),
       el("div", { className: "match-options" }, ...matchOptions),
       el("h4", {}, "Additional Match Text"),
       el("div", { className: "settings-fields" }, ...conditionInputs),
