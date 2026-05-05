@@ -122,6 +122,30 @@ const languageDvdResult = shim.formatHolds(languageDvdFixture, "downtown-reno");
 assert.strictEqual(languageDvdResult.report.otherRecords.length, 0);
 assert.strictEqual(languageDvdResult.groups[0].name, "BluRays and DVDs");
 
+const defaultShelfSortFixture = `4 items found for Test Library
+Summer state of mind / FICTION
+
+Woodson Harvey, Kristy,\tAdult Fiction\tNew Arrivals Shelf\tBook\tFICTION WOODSO 2026\t31235800249497 or any available\tRN Downtown Reno Library\t05/01/2026
+The night we met / ROMANCE
+
+Jimenez, Abby,\tAdult Fiction\tNew Arrivals Shelf\tBook\tROMANCE JIMENE 2026\t31235800213899 or any available\tRN Downtown Reno Library\t05/01/2026
+The school for good mothers : FICTION a novel /
+
+Chan, Jessamine,\tAdult Fiction\t\tBook\tFICTION CHAN 2022\t31235401100149 or any available\tRN Downtown Reno Library\t05/01/2026
+Of love and shadows : ROMANCE a novel /
+
+Allende, Isabel,\tAdult Fiction\t\tBook\tROMANCE ALLEND 2016\t31235400923863 or any available\tRN Downtown Reno Library\t05/01/2026`;
+const defaultShelfSortResult = shim.formatHolds(defaultShelfSortFixture, "downtown-reno");
+const defaultShelfSortGroups = Object.fromEntries(defaultShelfSortResult.groups.map((group) => [group.name, group.items]));
+assert.deepStrictEqual(defaultShelfSortGroups["New Adult Fiction"].map((record) => record.callNumber), [
+  "ROMANCE JIMENE 2026",
+  "FICTION WOODSO 2026"
+]);
+assert.deepStrictEqual(defaultShelfSortGroups["Adult Fiction"].map((record) => record.callNumber), [
+  "ROMANCE ALLEND 2016",
+  "FICTION CHAN 2022"
+]);
+
 const disabledNevadaProfile = shim.resolveProfile("downtown-reno");
 disabledNevadaProfile.disabledGroups = ["Nevada Collection"];
 const nevadaBioFixture = `Nevada biography / BIO
@@ -143,6 +167,28 @@ const titleSortResult = shim.formatHolds(titleSortFixture, titleSortProfile);
 assert.deepStrictEqual(titleSortResult.groups[0].items.map((record) => record.title), [
   "Apple story / FICTION",
   "Zoo story / FICTION"
+]);
+
+const customShelfSortProfile = shim.resolveProfile("downtown-reno");
+customShelfSortProfile.groupSortSettings = {
+  ...customShelfSortProfile.groupSortSettings,
+  "Adult Fiction": {
+    subgroups: ["ROMANCE", "FICTION"],
+    ignorePrefixes: ["ROMANCE", "FICTION"],
+    interfileSubgroups: false
+  }
+};
+const customShelfSortFixture = `2 items found for Test Library
+Romance Zed / ROMANCE
+
+Author One\tAdult Fiction\t\tBook\tROMANCE ZZZ 2021\t31235000000010 or any available\tRN Downtown Reno Library\t05/01/2026
+Fiction Alpha / FICTION
+
+Author Two\tAdult Fiction\t\tBook\tFICTION ALPHA 2020\t31235000000011 or any available\tRN Downtown Reno Library\t05/01/2026`;
+const customShelfSortResult = shim.formatHolds(customShelfSortFixture, customShelfSortProfile);
+assert.deepStrictEqual(customShelfSortResult.groups[0].items.map((record) => record.callNumber), [
+  "ROMANCE ZZZ 2021",
+  "FICTION ALPHA 2020"
 ]);
 
 const customBranchProfile = shim.resolveProfile("sparks");

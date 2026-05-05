@@ -660,21 +660,42 @@
   function buildSortKey(record) {
     const group = record.group;
     const sortMode = profile.groupSortModes && profile.groupSortModes[group];
-    if (profile.ruleMode === "custom") {
-      return buildCustomSortKey(record, sortMode || "shelf");
-    }
+    const useCustomShelfSort = shouldUseCustomShelfSort(group);
+
     if (sortMode === "title") {
+      if (useCustomShelfSort) {
+        return buildCustomSortKey(record, sortMode);
+      }
       return normalizeTitle(record.title);
     }
     if (sortMode === "author") {
+      if (useCustomShelfSort) {
+        return buildCustomSortKey(record, sortMode);
+      }
       return `${normalizeText(record.author)} ${normalizeTitle(record.title)}`;
     }
     if (sortMode === "barcode") {
+      if (useCustomShelfSort) {
+        return buildCustomSortKey(record, sortMode);
+      }
       return record.barcode || "";
     }
     if (sortMode === "raw-call") {
+      if (useCustomShelfSort) {
+        return buildCustomSortKey(record, sortMode);
+      }
       return normalizeText(record.callNumber) || normalizeTitle(record.title);
     }
+
+    if (useCustomShelfSort) {
+      return buildCustomSortKey(record, "shelf");
+    }
+
+    return buildDefaultShelfSortKey(record);
+  }
+
+  function buildDefaultShelfSortKey(record) {
+    const group = record.group;
     if (group === "BluRays and DVDs") {
       return stripDvdPrefix(record.callNumber) || normalizeTitle(record.title);
     }
@@ -715,6 +736,51 @@
       return stripShelfPrefixes(record.callNumber) || normalizeTitle(record.title);
     }
     return stripShelfPrefixes(record.callNumber) || normalizeTitle(record.title);
+  }
+
+  function shouldUseCustomShelfSort(group) {
+    const settings = profile.groupSortSettings && profile.groupSortSettings[group];
+    if (!settings) {
+      return false;
+    }
+
+    const defaultProfile = builtInProfiles.find((item) => item.id === profile.id)
+      || builtInProfiles.find((item) => item.id === defaultProfileId)
+      || builtInProfiles[0];
+    const defaultSettings = defaultProfile
+      && defaultProfile.groupSortSettings
+      && defaultProfile.groupSortSettings[group];
+
+    if (!defaultSettings) {
+      return hasSortSettingValues(settings);
+    }
+
+    return !sameSortSettings(settings, defaultSettings);
+  }
+
+  function sameSortSettings(left, right) {
+    const leftInterfile = (left && left.interfileSubgroups) !== false;
+    const rightInterfile = (right && right.interfileSubgroups) !== false;
+    return sameStringList(left && left.ignorePrefixes, right && right.ignorePrefixes)
+      && sameStringList(left && left.subgroups, right && right.subgroups)
+      && leftInterfile === rightInterfile;
+  }
+
+  function sameStringList(left, right) {
+    const leftValues = normalizeStringList(left);
+    const rightValues = normalizeStringList(right);
+    return leftValues.length === rightValues.length
+      && leftValues.every((value, index) => value === rightValues[index]);
+  }
+
+  function normalizeStringList(values) {
+    return Array.isArray(values) ? values.map(normalizeText).filter(Boolean) : [];
+  }
+
+  function hasSortSettingValues(settings) {
+    return normalizeStringList(settings.ignorePrefixes).length > 0
+      || normalizeStringList(settings.subgroups).length > 0
+      || settings.interfileSubgroups === false;
   }
 
   function buildCustomSortKey(record, sortMode) {
