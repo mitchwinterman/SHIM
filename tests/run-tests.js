@@ -1,5 +1,6 @@
 const assert = require("assert");
 const shim = require("../js/core");
+const profileStore = require("../js/profileStore");
 
 const fixture = `Koha
 Circulation
@@ -94,4 +95,140 @@ assert.deepStrictEqual(musicResult.groups[0].items.map((record) => record.callNu
   "CD/RAP/HIP-HOP MACHIN 2025"
 ]);
 
+const customProfile = shim.resolveProfile("downtown-reno");
+customProfile.id = "test-reordered";
+customProfile.groupOrder = profileStore.mergeGroupOrder([
+  "Early Readers",
+  "BluRays and DVDs",
+  ...customProfile.groupOrder
+], customProfile.groupOrder);
+const reorderedResult = shim.formatHolds(fixture, customProfile);
+assert.strictEqual(reorderedResult.groups[0].name, "Early Readers");
+assert.strictEqual(reorderedResult.groups[1].name, "BluRays and DVDs");
+
+assert.strictEqual(shim.defaultProfileId, "downtown-reno");
+assert.strictEqual(shim.getProfiles().length, 12);
+assert.ok(!shim.getProfiles().some((profile) => profile.id === "mvp"));
+assert.ok(shim.getProfiles().some((profile) => profile.id === "verdi"));
+assert.strictEqual(shim.resolveProfile("sparks").groupOrder[0], "New Adult Fiction");
+assert.strictEqual(shim.resolveProfile("sparks").groupOrder.at(-1), "Other");
+const seededBranchResult = shim.formatHolds(fixture, "sparks");
+assert.strictEqual(seededBranchResult.groups[0].name, "NEW Large Print");
+
+const languageDvdFixture = `The worst person in the world [DVD videorecording] / NORWEGIAN DVD VIDEO Criterion collection
+
+DVD / Blu-rays\t\tDVD 07 Day\tNORWEGIAN DVD VIDEO WORST\t31235499962582 or any available\tSSD Spanish Springs Drive-Up\t05/01/2026`;
+const languageDvdResult = shim.formatHolds(languageDvdFixture, "downtown-reno");
+assert.strictEqual(languageDvdResult.report.otherRecords.length, 0);
+assert.strictEqual(languageDvdResult.groups[0].name, "BluRays and DVDs");
+
+const disabledNevadaProfile = shim.resolveProfile("downtown-reno");
+disabledNevadaProfile.disabledGroups = ["Nevada Collection"];
+const nevadaBioFixture = `Nevada biography / BIO
+
+Historian, Local\tAdult Nonfiction\tNevada Room\tBook\tBIO SMITH 2020\t31235000000001 or any available\tRN Downtown Reno Library\t05/01/2026`;
+const disabledNevadaResult = shim.formatHolds(nevadaBioFixture, disabledNevadaProfile);
+assert.strictEqual(disabledNevadaResult.groups[0].name, "Biography");
+
+const titleSortProfile = shim.resolveProfile("downtown-reno");
+titleSortProfile.groupSortModes = { "Adult Fiction": "title" };
+const titleSortFixture = `2 items found for Test Library
+Zoo story / FICTION
+
+Author One\tAdult Fiction\t\tBook\tFICTION ALPHA 2020\t31235000000002 or any available\tRN Downtown Reno Library\t05/01/2026
+Apple story / FICTION
+
+Author Two\tAdult Fiction\t\tBook\tFICTION ZULU 2021\t31235000000003 or any available\tRN Downtown Reno Library\t05/01/2026`;
+const titleSortResult = shim.formatHolds(titleSortFixture, titleSortProfile);
+assert.deepStrictEqual(titleSortResult.groups[0].items.map((record) => record.title), [
+  "Apple story / FICTION",
+  "Zoo story / FICTION"
+]);
+
+const customBranchProfile = shim.resolveProfile("sparks");
+customBranchProfile.groupOrder = ["Children's DVDs", "DVDs", "Other"];
+customBranchProfile.categoryRules = {
+  "Children's DVDs": { matchPresets: ["j-dvd"], matchConditions: [] },
+  DVDs: { matchPresets: ["adult-dvd"], matchConditions: [] }
+};
+const dvdSplitFixture = `2 items found for Test Library
+Kid movie [DVD] / J DVD
+
+Director One\tChildren's DVD / Blu-rays\t\tDVD 07 Day\tJ DVD KIDMOVIE\t31235000000004 or any available\tRN Downtown Reno Library\t05/01/2026
+Adult movie [DVD] / DVD
+
+Director Two\tDVD / Blu-rays\t\tDVD 07 Day\tDVD ADULTMOVIE\t31235000000005 or any available\tRN Downtown Reno Library\t05/01/2026`;
+const dvdSplitResult = shim.formatHolds(dvdSplitFixture, customBranchProfile);
+assert.deepStrictEqual(dvdSplitResult.groups.map((group) => group.name), ["Children's DVDs", "DVDs"]);
+
+const subgroupProfile = shim.resolveProfile("sparks");
+subgroupProfile.groupOrder = ["Media", "Other"];
+subgroupProfile.categoryRules = {
+  Media: { matchPresets: ["j-dvd", "adult-dvd", "adult-bluray"], matchConditions: [] }
+};
+subgroupProfile.groupSortSettings = {
+  Media: {
+    subgroups: ["J DVD", "DVD", "BLU-RAY"],
+    ignorePrefixes: ["J DVD", "DVD", "BLU-RAY", "VIDEO"],
+    interfileSubgroups: false
+  }
+};
+const subgroupFixture = `3 items found for Test Library
+Bravo [Blu-ray] / BLU-RAY
+
+Director B\tDVD / Blu-rays\t\tBlu-ray 07 Day\tBLU-RAY VIDEO BRAVO\t31235000000006 or any available\tRN Downtown Reno Library\t05/01/2026
+Alpha [DVD] / DVD
+
+Director A\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO ALPHA\t31235000000007 or any available\tRN Downtown Reno Library\t05/01/2026
+Charlie [DVD] / J DVD
+
+Director C\tChildren's DVD / Blu-rays\t\tDVD 07 Day\tJ DVD VIDEO CHARLIE\t31235000000008 or any available\tRN Downtown Reno Library\t05/01/2026`;
+const subgroupResult = shim.formatHolds(subgroupFixture, subgroupProfile);
+assert.deepStrictEqual(subgroupResult.groups[0].items.map((record) => record.callNumber), [
+  "J DVD VIDEO CHARLIE",
+  "DVD VIDEO ALPHA",
+  "BLU-RAY VIDEO BRAVO"
+]);
+
+const store = createMemoryStorage();
+profileStore.saveSelectedProfileId(store, "sparks");
+assert.strictEqual(profileStore.loadSelectedProfileId(store, "downtown-reno"), "sparks");
+
+profileStore.saveOverride(store, "downtown-reno", {
+  groupOrder: ["Other", "Early Readers"],
+  disabledGroups: ["Nevada Collection"],
+  groupSortModes: { "Adult Fiction": "title" },
+  categoryRules: { "Early Readers": { matchPresets: ["early-readers"], matchConditions: [] } },
+  groupSortSettings: { "Early Readers": { subgroups: ["J E"], ignorePrefixes: ["J E"], interfileSubgroups: true } }
+});
+let profiles = profileStore.applyOverrides([shim.resolveProfile("downtown-reno")], profileStore.loadOverrides(store));
+assert.strictEqual(profiles[0].groupOrder[0], "Early Readers");
+assert.strictEqual(profiles[0].groupOrder[profiles[0].groupOrder.length - 1], "Other");
+assert.deepStrictEqual(profiles[0].disabledGroups, ["Nevada Collection"]);
+assert.strictEqual(profiles[0].groupSortModes["Adult Fiction"], "title");
+assert.deepStrictEqual(profiles[0].categoryRules["Early Readers"].matchPresets, ["early-readers"]);
+assert.deepStrictEqual(profiles[0].groupSortSettings["Early Readers"].ignorePrefixes, ["J E"]);
+assert.strictEqual(profiles[0].hasLocalOverride, true);
+
+const exported = profileStore.exportOverride(profiles[0]);
+const imported = profileStore.importOverride(exported, shim.resolveProfile("downtown-reno"));
+assert.strictEqual(imported.groupOrder[0], "Early Readers");
+
+profileStore.resetOverride(store, "downtown-reno");
+profiles = profileStore.applyOverrides([shim.resolveProfile("downtown-reno")], profileStore.loadOverrides(store));
+assert.strictEqual(profiles[0].groupOrder[0], "New Adult Fiction");
+assert.strictEqual(Boolean(profiles[0].hasLocalOverride), false);
+
 console.log("All SHIM tests passed.");
+
+function createMemoryStorage() {
+  const values = new Map();
+  return {
+    getItem(key) {
+      return values.has(key) ? values.get(key) : null;
+    },
+    setItem(key, value) {
+      values.set(key, String(value));
+    }
+  };
+}

@@ -5,7 +5,7 @@
   } else {
     root.SHIM_PROFILE = profile;
   }
-})(typeof globalThis !== "undefined" ? globalThis : this, function createProfile() {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createProfileRegistry() {
   const groupOrder = [
     "New Adult Fiction",
     "New Adult Nonfiction",
@@ -34,10 +34,28 @@
     "Other"
   ];
 
-  return {
+  const baseProfile = {
+    id: "mvp",
     name: "Washoe County Library System MVP",
+    branchName: "MVP",
+    ruleMode: "mvp",
     groupOrder,
+    disabledGroups: [],
+    groupSortModes: {},
+    categoryRules: {},
+    groupSortSettings: {},
     defaultGroup: "Other",
+    enabledRules: {
+      separateEarlyReaders: true,
+      separateNewYa: true,
+      separateChildrenWorldLanguage: true,
+      combineDvdAndBluRay: true,
+      interfileLargePrintNonfiction: true
+    },
+    newItemBehavior: {
+      location: "New Arrivals Shelf",
+      ignoreNewForMediaAndChildrenNonfiction: true
+    },
     knownCollections: [
       "Adult Fiction",
       "Adult Nonfiction",
@@ -103,5 +121,145 @@
       "CHILDREN",
       "NEW AGE"
     ]
+  };
+
+  const categoryLibrary = [
+    { name: "New Adult Fiction", matchPresets: ["new-adult-fiction"] },
+    { name: "New Adult Nonfiction", matchPresets: ["new-adult-nonfiction"] },
+    { name: "New Adult Biography", matchPresets: ["new-adult-biography"] },
+    { name: "NEW Large Print", matchPresets: ["new-large-print"] },
+    { name: "Adult Fiction", matchPresets: ["adult-fiction"] },
+    { name: "Adult Nonfiction", matchPresets: ["adult-nonfiction"] },
+    { name: "Biography", matchPresets: ["biography"] },
+    { name: "Large Print Fiction", matchPresets: ["large-print-fiction"] },
+    { name: "New YA", matchPresets: ["new-ya"] },
+    { name: "YA Fiction", matchPresets: ["ya-fiction"] },
+    { name: "YA Nonfiction", matchPresets: ["ya-nonfiction"] },
+    { name: "Board Books", matchPresets: ["board-books"] },
+    { name: "Early Readers", matchPresets: ["early-readers"] },
+    { name: "Picture Books/Easy Readers", matchPresets: ["picture-books"] },
+    { name: "Children's NONFiction", matchPresets: ["children-nonfiction"] },
+    { name: "Children's Fiction", matchPresets: ["children-fiction"] },
+    { name: "NEW Children's Fiction", matchPresets: ["new-children-fiction"] },
+    { name: "Nevada Collection", matchPresets: ["nevada"] },
+    { name: "Adult World Language", matchPresets: ["adult-world-language"] },
+    { name: "Children's World Language", matchPresets: ["children-world-language"] },
+    { name: "Special Collections", matchPresets: ["special-collections"] },
+    {
+      name: "DVDs",
+      matchPresets: ["adult-dvd"],
+      subgroups: ["DVD"],
+      ignorePrefixes: ["DVD", "VIDEO"]
+    },
+    {
+      name: "Blu-rays",
+      matchPresets: ["adult-bluray"],
+      subgroups: ["BLU-RAY", "BLURAY"],
+      ignorePrefixes: ["BLU-RAY", "BLURAY", "VIDEO"]
+    },
+    {
+      name: "Children's DVDs",
+      matchPresets: ["j-dvd"],
+      subgroups: ["J DVD"],
+      ignorePrefixes: ["J DVD", "DVD", "VIDEO"]
+    },
+    {
+      name: "Children's Blu-rays",
+      matchPresets: ["j-bluray"],
+      subgroups: ["J BLU-RAY", "J BLURAY"],
+      ignorePrefixes: ["J BLU-RAY", "J BLURAY", "BLU-RAY", "BLURAY", "VIDEO"]
+    },
+    {
+      name: "BluRays and DVDs",
+      matchPresets: ["adult-dvd", "adult-bluray", "j-dvd", "j-bluray"],
+      subgroups: ["J DVD", "DVD", "J BLU-RAY", "BLU-RAY"],
+      ignorePrefixes: ["J DVD", "DVD", "J BLU-RAY", "BLU-RAY", "BLURAY", "VIDEO"]
+    },
+    { name: "Music CDs", matchPresets: ["music-cd"] },
+    { name: "Audiobook CDs", matchPresets: ["audiobook-cd"] }
+  ];
+
+  const defaultCategoryRules = Object.fromEntries(
+    categoryLibrary
+      .filter((category) => groupOrder.includes(category.name))
+      .map((category) => [category.name, {
+        matchPresets: [...category.matchPresets],
+        matchConditions: []
+      }])
+  );
+
+  const defaultGroupSortSettings = Object.fromEntries(
+    categoryLibrary
+      .filter((category) => groupOrder.includes(category.name))
+      .map((category) => [category.name, {
+        ignorePrefixes: [...(category.ignorePrefixes || [])],
+        subgroups: [...(category.subgroups || [])],
+        interfileSubgroups: true
+      }])
+  );
+
+  const defaultMatchPriority = [
+    "Special Collections",
+    "BluRays and DVDs",
+    "Music CDs",
+    "Audiobook CDs",
+    "Nevada Collection",
+    "Children's World Language",
+    "Adult World Language",
+    "NEW Large Print",
+    "Large Print Fiction",
+    "New Adult Biography",
+    "Biography",
+    "New Adult Fiction",
+    "Adult Fiction",
+    "New Adult Nonfiction",
+    "Adult Nonfiction",
+    "New YA",
+    "YA Nonfiction",
+    "YA Fiction",
+    "Board Books",
+    "Early Readers",
+    "Picture Books/Easy Readers",
+    "Children's NONFiction",
+    "NEW Children's Fiction",
+    "Children's Fiction",
+    "Other"
+  ];
+
+  const branchProfiles = [
+    ["downtown-reno", "Downtown Reno Library"],
+    ["duncan-traner", "Duncan/Traner Community Library"],
+    ["gerlach", "Gerlach Community Library"],
+    ["incline-village", "Incline Village Library"],
+    ["north-valleys", "North Valleys Library"],
+    ["northwest-reno", "Northwest Reno Library"],
+    ["senior-center", "Senior Center Library"],
+    ["sierra-view", "Sierra View Library"],
+    ["south-valleys", "South Valleys Library"],
+    ["spanish-springs", "Spanish Springs Library"],
+    ["sparks", "Sparks Library"],
+    ["verdi", "Verdi Community Library & Nature Center"]
+  ];
+
+  const profiles = [
+    ...branchProfiles.map(([id, name]) => ({
+      ...baseProfile,
+      id,
+      name,
+      branchName: name,
+      ruleMode: "custom",
+      groupOrder: [...baseProfile.groupOrder],
+      disabledGroups: [],
+      groupSortModes: {},
+      categoryRules: defaultCategoryRules,
+      groupSortSettings: defaultGroupSortSettings,
+      matchPriority: [...defaultMatchPriority]
+    }))
+  ];
+
+  return {
+    defaultProfileId: "downtown-reno",
+    categoryLibrary,
+    profiles
   };
 });

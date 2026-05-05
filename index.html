@@ -9,14 +9,30 @@
   </head>
   <body>
     <header class="app-header">
-      <div>
+      <button id="header-home-button" class="header-home-button" type="button" aria-label="Start a new paste">
         <p class="eyebrow">SHIM</p>
         <h1>Sorting Holds Interface Module</h1>
-      </div>
-      <img class="header-logo" src="Assets/images/logoNamewcllogo_med.png" alt="Washoe County Library System">
+      </button>
+      <button id="header-logo-button" class="header-logo-button" type="button" aria-label="Start a new paste">
+        <img class="header-logo" src="assets/images/logoNamewcllogo_med.png" alt="Washoe County Library System">
+      </button>
     </header>
 
     <main>
+      <section class="branch-panel" aria-label="Branch profile selection">
+        <div class="branch-summary">
+          <p class="eyebrow">Branch Profile</p>
+          <h2 id="active-branch-name">Downtown Reno Library</h2>
+        </div>
+        <div class="branch-controls">
+          <label class="branch-select-label" for="branch-selector">
+            <span>Use profile</span>
+            <select id="branch-selector" aria-label="Branch profiles"></select>
+          </label>
+          <button id="branch-settings-button" class="icon-button" type="button" aria-label="Open branch sorting settings">Settings</button>
+        </div>
+      </section>
+
       <section id="paste-screen" class="workspace">
         <div class="section-heading">
           <h2>Format HOLDS List</h2>
@@ -50,7 +66,47 @@
       </section>
     </main>
 
+    <div id="settings-modal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-panel">
+        <div class="modal-heading">
+          <div>
+            <p class="eyebrow">Branch Settings</p>
+            <h2 id="settings-title">Sorting order</h2>
+          </div>
+          <button id="close-settings-button" class="icon-button" type="button" aria-label="Close settings">Close</button>
+        </div>
+        <p class="settings-note">Start with Other, add categories, choose what belongs in each category, then define subgroup and shelf-sort behavior. These experimental settings save in this browser.</p>
+        <div class="category-builder" aria-label="Add categories">
+          <label>
+            Built-in category
+            <select id="add-category-select"></select>
+          </label>
+          <button id="add-category-button" class="secondary-button" type="button">Add Category</button>
+          <label>
+            Custom category
+            <input id="custom-category-name" type="text" autocomplete="off">
+          </label>
+          <button id="add-custom-category-button" class="secondary-button" type="button">Create Category</button>
+        </div>
+        <div class="settings-grid">
+          <ol id="group-order-list" class="group-order-list"></ol>
+          <section id="category-editor" class="category-editor" aria-label="Selected category settings"></section>
+        </div>
+        <div class="settings-actions">
+          <button id="save-settings-button" class="primary-button" type="button">Save Settings</button>
+          <button id="reset-settings-button" class="secondary-button" type="button">Reset Branch</button>
+          <button id="export-settings-button" class="secondary-button" type="button">Export JSON</button>
+        </div>
+        <label class="input-label" for="import-settings-text">Import JSON</label>
+        <textarea id="import-settings-text" class="settings-import" spellcheck="false"></textarea>
+        <div class="actions">
+          <button id="import-settings-button" class="secondary-button" type="button">Import JSON</button>
+        </div>
+      </div>
+    </div>
+
     <script src="js/profile.js"></script>
+    <script src="js/profileStore.js"></script>
     <script src="js/core.js"></script>
     <script src="js/app.js"></script>
   </body>
