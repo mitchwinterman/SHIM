@@ -697,7 +697,7 @@
   function buildDefaultShelfSortKey(record) {
     const group = record.group;
     if (group === "BluRays and DVDs") {
-      return stripDvdPrefix(record.callNumber) || normalizeTitle(record.title);
+      return mediaSortKey(record);
     }
     if (group === "Music CDs") {
       return stripMusicPrefix(record.callNumber) || normalizeTitle(record.title);
@@ -736,6 +736,17 @@
       return stripShelfPrefixes(record.callNumber) || normalizeTitle(record.title);
     }
     return stripShelfPrefixes(record.callNumber) || normalizeTitle(record.title);
+  }
+
+  function mediaSortKey(record) {
+    const shelfKey = stripDvdPrefix(record.callNumber) || normalizeTitle(record.title);
+    if (/^\d/.test(shelfKey)) {
+      return `0 ${shelfKey}`;
+    }
+    if (/^BIO\b/.test(shelfKey)) {
+      return `1 ${shelfKey}`;
+    }
+    return `2 ${shelfKey}`;
   }
 
   function shouldUseCustomShelfSort(group) {

@@ -122,6 +122,35 @@ const languageDvdResult = shim.formatHolds(languageDvdFixture, "downtown-reno");
 assert.strictEqual(languageDvdResult.report.otherRecords.length, 0);
 assert.strictEqual(languageDvdResult.groups[0].name, "BluRays and DVDs");
 
+const mediaBioSortFixture = `6 items found for Test Library
+All the king's men [DVD videorecording] / DVD VIDEO
+
+\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO ALL FULL\t31235000000020 or any available\tRN Downtown Reno Library\t05/01/2026
+Rachel Carson [DVD videorecording] / DVD VIDEO BIO
+
+\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO BIO CARSON\t31235000000021 or any available\tRN Downtown Reno Library\t05/01/2026
+10 minute solution. [DVD videorecording] / DVD VIDEO 613 Rapid results Pilates
+
+\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO 613 TEN\t31235000000022 or any available\tRN Downtown Reno Library\t05/01/2026
+Ida B. Wells : [DVD videorecording] DVD VIDEO BIO a passion for justice
+
+\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO BIO WELLS\t31235000000023 or any available\tRN Downtown Reno Library\t05/01/2026
+Who do you think you are?. [DVD videorecording] / DVD VIDEO 929 Season 1
+
+\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO 929 WHO WIDE\t31235000000024 or any available\tRN Downtown Reno Library\t05/01/2026
+Anchors aweigh [DVD videorecording] / DVD VIDEO Frank Sinatra collection
+
+\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO ANC FULLSCREEN\t31235000000025 or any available\tRN Downtown Reno Library\t05/01/2026`;
+const mediaBioSortResult = shim.formatHolds(mediaBioSortFixture, "downtown-reno");
+assert.deepStrictEqual(mediaBioSortResult.groups[0].items.map((record) => record.callNumber), [
+  "DVD VIDEO 613 TEN",
+  "DVD VIDEO 929 WHO WIDE",
+  "DVD VIDEO BIO CARSON",
+  "DVD VIDEO BIO WELLS",
+  "DVD VIDEO ALL FULL",
+  "DVD VIDEO ANC FULLSCREEN"
+]);
+
 const defaultShelfSortFixture = `4 items found for Test Library
 Summer state of mind / FICTION
 
