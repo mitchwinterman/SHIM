@@ -525,7 +525,7 @@
       return "Other";
     }
 
-    for (const group of profile.groupOrder) {
+    for (const group of customMatchOrder()) {
       if (group === "Other" || !isGroupEnabled(group)) {
         continue;
       }
@@ -536,6 +536,15 @@
 
     record.reviewReasons.push("No branch category matched.");
     return "Other";
+  }
+
+  function customMatchOrder() {
+    const groups = profile.groupOrder || [];
+    const priority = Array.isArray(profile.matchPriority) ? profile.matchPriority : [];
+    return [
+      ...priority.filter((group) => groups.includes(group)),
+      ...groups.filter((group) => !priority.includes(group))
+    ];
   }
 
   function matchesCategoryRule(record, rule) {

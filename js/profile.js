@@ -198,6 +198,34 @@
       }])
   );
 
+  const defaultMatchPriority = [
+    "Special Collections",
+    "BluRays and DVDs",
+    "Music CDs",
+    "Audiobook CDs",
+    "Nevada Collection",
+    "Children's World Language",
+    "Adult World Language",
+    "NEW Large Print",
+    "Large Print Fiction",
+    "New Adult Biography",
+    "Biography",
+    "New Adult Fiction",
+    "Adult Fiction",
+    "New Adult Nonfiction",
+    "Adult Nonfiction",
+    "New YA",
+    "YA Nonfiction",
+    "YA Fiction",
+    "Board Books",
+    "Early Readers",
+    "Picture Books/Easy Readers",
+    "Children's NONFiction",
+    "NEW Children's Fiction",
+    "Children's Fiction",
+    "Other"
+  ];
+
   const branchProfiles = [
     ["downtown-reno", "Downtown Reno Library"],
     ["duncan-traner", "Duncan/Traner Community Library"],
@@ -214,7 +242,6 @@
   ];
 
   const profiles = [
-    baseProfile,
     ...branchProfiles.map(([id, name]) => ({
       ...baseProfile,
       id,
@@ -225,12 +252,13 @@
       disabledGroups: [],
       groupSortModes: {},
       categoryRules: defaultCategoryRules,
-      groupSortSettings: defaultGroupSortSettings
+      groupSortSettings: defaultGroupSortSettings,
+      matchPriority: [...defaultMatchPriority]
     }))
   ];
 
   return {
-    defaultProfileId: baseProfile.id,
+    defaultProfileId: "downtown-reno",
     categoryLibrary,
     profiles
   };

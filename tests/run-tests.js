@@ -95,7 +95,7 @@ assert.deepStrictEqual(musicResult.groups[0].items.map((record) => record.callNu
   "CD/RAP/HIP-HOP MACHIN 2025"
 ]);
 
-const customProfile = shim.resolveProfile("mvp");
+const customProfile = shim.resolveProfile("downtown-reno");
 customProfile.id = "test-reordered";
 customProfile.groupOrder = profileStore.mergeGroupOrder([
   "Early Readers",
@@ -106,14 +106,16 @@ const reorderedResult = shim.formatHolds(fixture, customProfile);
 assert.strictEqual(reorderedResult.groups[0].name, "Early Readers");
 assert.strictEqual(reorderedResult.groups[1].name, "BluRays and DVDs");
 
-assert.strictEqual(shim.getProfiles().length, 13);
+assert.strictEqual(shim.defaultProfileId, "downtown-reno");
+assert.strictEqual(shim.getProfiles().length, 12);
+assert.ok(!shim.getProfiles().some((profile) => profile.id === "mvp"));
 assert.ok(shim.getProfiles().some((profile) => profile.id === "verdi"));
 assert.strictEqual(shim.resolveProfile("sparks").groupOrder[0], "New Adult Fiction");
 assert.strictEqual(shim.resolveProfile("sparks").groupOrder.at(-1), "Other");
 const seededBranchResult = shim.formatHolds(fixture, "sparks");
-assert.strictEqual(seededBranchResult.groups[0].name, "New Adult Fiction");
+assert.strictEqual(seededBranchResult.groups[0].name, "NEW Large Print");
 
-const disabledNevadaProfile = shim.resolveProfile("mvp");
+const disabledNevadaProfile = shim.resolveProfile("downtown-reno");
 disabledNevadaProfile.disabledGroups = ["Nevada Collection"];
 const nevadaBioFixture = `Nevada biography / BIO
 
@@ -121,7 +123,7 @@ Historian, Local\tAdult Nonfiction\tNevada Room\tBook\tBIO SMITH 2020\t312350000
 const disabledNevadaResult = shim.formatHolds(nevadaBioFixture, disabledNevadaProfile);
 assert.strictEqual(disabledNevadaResult.groups[0].name, "Biography");
 
-const titleSortProfile = shim.resolveProfile("mvp");
+const titleSortProfile = shim.resolveProfile("downtown-reno");
 titleSortProfile.groupSortModes = { "Adult Fiction": "title" };
 const titleSortFixture = `2 items found for Test Library
 Zoo story / FICTION
@@ -183,16 +185,16 @@ assert.deepStrictEqual(subgroupResult.groups[0].items.map((record) => record.cal
 
 const store = createMemoryStorage();
 profileStore.saveSelectedProfileId(store, "sparks");
-assert.strictEqual(profileStore.loadSelectedProfileId(store, "mvp"), "sparks");
+assert.strictEqual(profileStore.loadSelectedProfileId(store, "downtown-reno"), "sparks");
 
-profileStore.saveOverride(store, "mvp", {
+profileStore.saveOverride(store, "downtown-reno", {
   groupOrder: ["Other", "Early Readers"],
   disabledGroups: ["Nevada Collection"],
   groupSortModes: { "Adult Fiction": "title" },
   categoryRules: { "Early Readers": { matchPresets: ["early-readers"], matchConditions: [] } },
   groupSortSettings: { "Early Readers": { subgroups: ["J E"], ignorePrefixes: ["J E"], interfileSubgroups: true } }
 });
-let profiles = profileStore.applyOverrides([shim.resolveProfile("mvp")], profileStore.loadOverrides(store));
+let profiles = profileStore.applyOverrides([shim.resolveProfile("downtown-reno")], profileStore.loadOverrides(store));
 assert.strictEqual(profiles[0].groupOrder[0], "Early Readers");
 assert.strictEqual(profiles[0].groupOrder[profiles[0].groupOrder.length - 1], "Other");
 assert.deepStrictEqual(profiles[0].disabledGroups, ["Nevada Collection"]);
@@ -202,11 +204,11 @@ assert.deepStrictEqual(profiles[0].groupSortSettings["Early Readers"].ignorePref
 assert.strictEqual(profiles[0].hasLocalOverride, true);
 
 const exported = profileStore.exportOverride(profiles[0]);
-const imported = profileStore.importOverride(exported, shim.resolveProfile("mvp"));
+const imported = profileStore.importOverride(exported, shim.resolveProfile("downtown-reno"));
 assert.strictEqual(imported.groupOrder[0], "Early Readers");
 
-profileStore.resetOverride(store, "mvp");
-profiles = profileStore.applyOverrides([shim.resolveProfile("mvp")], profileStore.loadOverrides(store));
+profileStore.resetOverride(store, "downtown-reno");
+profiles = profileStore.applyOverrides([shim.resolveProfile("downtown-reno")], profileStore.loadOverrides(store));
 assert.strictEqual(profiles[0].groupOrder[0], "New Adult Fiction");
 assert.strictEqual(Boolean(profiles[0].hasLocalOverride), false);
 

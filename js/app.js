@@ -171,9 +171,11 @@
     elements.branchSelector.replaceChildren(...profiles.map((profile) => (
       el("option", { value: profile.id }, profile.branchName || profile.name)
     )));
-    elements.branchSelector.value = profiles.some((profile) => profile.id === selectedProfileId)
-      ? selectedProfileId
-      : shim.defaultProfileId;
+    if (!profiles.some((profile) => profile.id === selectedProfileId)) {
+      selectedProfileId = shim.defaultProfileId;
+      profileStore.saveSelectedProfileId(storage, selectedProfileId);
+    }
+    elements.branchSelector.value = selectedProfileId;
   }
 
   elements.branchSelector.addEventListener("change", () => {
