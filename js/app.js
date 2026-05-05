@@ -709,11 +709,11 @@
         el("thead", {},
           el("tr", {},
             el("th", { className: "check-cell" }, ""),
+            el("th", { className: "call-cell" }, "Call number"),
             el("th", { className: "title-cell" }, "Title"),
             el("th", { className: "author-cell" }, "Author"),
-            el("th", { className: "call-cell" }, "Call number"),
-            el("th", { className: "barcode-cell" }, "Barcode"),
-            el("th", { className: "type-cell" }, "Item type")
+            el("th", { className: "type-cell" }, "Item type"),
+            el("th", { className: "barcode-cell" }, "Barcode")
           )
         ),
         el("tbody", {}, ...group.items.map(renderRow))
@@ -729,11 +729,11 @@
 
     return el("tr", {},
       el("td", { className: "check-cell" }, el("span", { className: "checkbox", "aria-hidden": "true" }, "")),
+      el("td", { className: "call-cell" }, record.callNumber || ""),
       titleCell,
       el("td", { className: "author-cell" }, record.author || ""),
-      el("td", { className: "call-cell" }, record.callNumber || ""),
-      el("td", { className: "barcode-cell" }, renderBarcode(record)),
-      el("td", { className: "type-cell" }, record.itemType || "")
+      el("td", { className: "type-cell" }, record.itemType || ""),
+      el("td", { className: "barcode-cell" }, renderBarcode(record))
     );
   }
 
@@ -744,13 +744,19 @@
       return text;
     }
 
+    const barcode = match[1];
     const suffix = match[2].trim();
+    const formattedBarcode = el("span", { className: "barcode-number" },
+      barcode.slice(0, -4),
+      el("strong", { className: "barcode-last-four" }, barcode.slice(-4))
+    );
+
     if (!suffix) {
-      return match[1];
+      return formattedBarcode;
     }
 
     return [
-      el("span", { className: "barcode-number" }, match[1]),
+      formattedBarcode,
       " ",
       el("span", { className: "availability-note" }, suffix)
     ];

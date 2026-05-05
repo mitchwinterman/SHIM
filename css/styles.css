@@ -628,7 +628,7 @@ tbody tr:nth-child(even) td {
 }
 
 .title-cell {
-  width: 30%;
+  width: 32%;
   font-weight: 750;
 }
 
@@ -640,16 +640,21 @@ tbody tr:nth-child(even) td {
   width: 22%;
   font-family: Consolas, "Liberation Mono", monospace;
   font-size: 0.92rem;
+  font-weight: 800;
 }
 
 .barcode-cell {
-  width: 18%;
+  width: 15%;
   font-family: Consolas, "Liberation Mono", monospace;
   font-size: 0.9rem;
 }
 
 .type-cell {
-  width: 10%;
+  width: 9%;
+}
+
+.barcode-last-four {
+  font-weight: 900;
 }
 
 .row-note {
@@ -803,6 +808,8 @@ tbody tr:nth-child(even) td {
 
   th,
   td {
+    border-left: 1px solid #b8c3c7;
+    border-right: 1px solid #b8c3c7;
     padding: 2px 3px;
     font-size: 8.4pt;
     line-height: 1.12;
