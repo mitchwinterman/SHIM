@@ -44,6 +44,32 @@ body {
   line-height: 1.12;
 }
 
+.header-home-button,
+.header-logo-button {
+  margin: 0;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.header-home-button {
+  padding: 0;
+  text-align: left;
+}
+
+.header-logo-button {
+  flex: 0 0 auto;
+  padding: 0;
+}
+
+.header-home-button:focus-visible,
+.header-logo-button:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 6px;
+}
+
 .eyebrow {
   margin: 0 0 6px;
   font-size: 0.78rem;
@@ -58,7 +84,6 @@ body {
   display: block;
   width: min(210px, 34vw);
   height: auto;
-  flex: 0 0 auto;
   border-radius: 6px;
   background: #ffffff;
   padding: 8px 10px;

@@ -4,6 +4,8 @@
   const shim = root.SHIM;
   const profileStore = root.SHIM_PROFILE_STORE;
   const elements = {
+    headerHomeButton: document.getElementById("header-home-button"),
+    headerLogoButton: document.getElementById("header-logo-button"),
     activeBranchName: document.getElementById("active-branch-name"),
     branchSelector: document.getElementById("branch-selector"),
     branchSettingsButton: document.getElementById("branch-settings-button"),
@@ -616,6 +618,18 @@
   window.addEventListener("beforeprint", updatePrintPageStyle);
 
   elements.newPasteButton.addEventListener("click", () => {
+    resetToPaste();
+  });
+
+  elements.headerHomeButton.addEventListener("click", () => {
+    resetToPaste();
+  });
+
+  elements.headerLogoButton.addEventListener("click", () => {
+    resetToPaste();
+  });
+
+  function resetToPaste() {
     elements.resultsScreen.classList.add("is-hidden");
     elements.pasteScreen.classList.remove("is-hidden");
     elements.input.value = "";
@@ -623,7 +637,7 @@
     elements.warnings.replaceChildren();
     elements.output.replaceChildren();
     elements.input.focus();
-  });
+  }
 
   function renderResult(result) {
     renderReport(result.report);
