@@ -839,6 +839,11 @@ tbody tr:nth-child(even) td {
 
   .title-cell {
     width: 31%;
+    font-weight: 400;
+  }
+
+  .title-main {
+    font-weight: 800;
   }
 
   .author-cell {
@@ -847,7 +852,7 @@ tbody tr:nth-child(even) td {
 
   .call-cell {
     width: 23%;
-    font-size: 8pt;
+    font-size: 9pt;
   }
 
   .barcode-cell {

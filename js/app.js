@@ -722,7 +722,7 @@
   }
 
   function renderRow(record) {
-    const titleCell = el("td", { className: "title-cell" }, record.title);
+    const titleCell = el("td", { className: "title-cell" }, renderTitle(record.title));
     if (record.reviewReasons.length > 0) {
       titleCell.appendChild(el("div", { className: "row-note" }, record.reviewReasons.join("; ")));
     }
@@ -735,6 +735,19 @@
       el("td", { className: "type-cell" }, record.itemType || ""),
       el("td", { className: "barcode-cell" }, renderBarcode(record))
     );
+  }
+
+  function renderTitle(title) {
+    const text = title || "";
+    const slashIndex = text.indexOf("/");
+    if (slashIndex === -1) {
+      return el("span", { className: "title-main" }, text);
+    }
+
+    return [
+      el("span", { className: "title-main" }, text.slice(0, slashIndex)),
+      el("span", { className: "title-rest" }, text.slice(slashIndex))
+    ];
   }
 
   function renderBarcode(record) {
