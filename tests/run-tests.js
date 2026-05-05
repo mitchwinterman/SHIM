@@ -108,10 +108,10 @@ assert.strictEqual(reorderedResult.groups[1].name, "BluRays and DVDs");
 
 assert.strictEqual(shim.getProfiles().length, 13);
 assert.ok(shim.getProfiles().some((profile) => profile.id === "verdi"));
-assert.deepStrictEqual(shim.resolveProfile("sparks").groupOrder, ["Other"]);
-const blankBranchResult = shim.formatHolds(fixture, "sparks");
-assert.strictEqual(blankBranchResult.groups[0].name, "Other");
-assert.strictEqual(blankBranchResult.groups[0].items.length, 5);
+assert.strictEqual(shim.resolveProfile("sparks").groupOrder[0], "New Adult Fiction");
+assert.strictEqual(shim.resolveProfile("sparks").groupOrder.at(-1), "Other");
+const seededBranchResult = shim.formatHolds(fixture, "sparks");
+assert.strictEqual(seededBranchResult.groups[0].name, "New Adult Fiction");
 
 const disabledNevadaProfile = shim.resolveProfile("mvp");
 disabledNevadaProfile.disabledGroups = ["Nevada Collection"];

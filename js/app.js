@@ -51,6 +51,7 @@
   let editingCategoryRules = {};
   let editingGroupSortSettings = {};
   let selectedEditingGroup = "Other";
+  let settingsSnapshot = "";
   let draggedGroup = "";
 
   renderAddCategoryOptions();
@@ -71,10 +72,10 @@
   });
 
   elements.branchSettingsButton.addEventListener("click", openSettings);
-  elements.closeSettingsButton.addEventListener("click", closeSettings);
+  elements.closeSettingsButton.addEventListener("click", requestCloseSettings);
   elements.settingsModal.addEventListener("click", (event) => {
     if (event.target === elements.settingsModal) {
-      closeSettings();
+      requestCloseSettings();
     }
   });
   elements.addCategoryButton.addEventListener("click", () => {
@@ -198,6 +199,7 @@
     editingCategoryRules = cloneData(selected.categoryRules || {});
     editingGroupSortSettings = cloneData(selected.groupSortSettings || {});
     selectedEditingGroup = editingGroupOrder.find((group) => group !== "Other") || "Other";
+    settingsSnapshot = serializeSettingsState();
     elements.settingsTitle.textContent = `${selected.branchName || selected.name} sorting settings`;
     elements.importSettingsText.value = "";
     renderGroupOrderEditor();
@@ -205,9 +207,32 @@
     elements.closeSettingsButton.focus();
   }
 
+  function requestCloseSettings() {
+    if (hasUnsavedSettings() && !root.confirm("Close branch settings without saving changes?")) {
+      return;
+    }
+    closeSettings();
+  }
+
   function closeSettings() {
     elements.settingsModal.classList.add("is-hidden");
     elements.branchSettingsButton.focus();
+  }
+
+  function hasUnsavedSettings() {
+    return !elements.settingsModal.classList.contains("is-hidden")
+      && settingsSnapshot
+      && serializeSettingsState() !== settingsSnapshot;
+  }
+
+  function serializeSettingsState() {
+    return JSON.stringify({
+      groupOrder: editingGroupOrder,
+      disabledGroups: editingDisabledGroups,
+      groupSortModes: editingGroupSortModes,
+      categoryRules: editingCategoryRules,
+      groupSortSettings: editingGroupSortSettings
+    });
   }
 
   function renderGroupOrderEditor() {

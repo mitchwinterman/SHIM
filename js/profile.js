@@ -179,6 +179,25 @@
     { name: "Audiobook CDs", matchPresets: ["audiobook-cd"] }
   ];
 
+  const defaultCategoryRules = Object.fromEntries(
+    categoryLibrary
+      .filter((category) => groupOrder.includes(category.name))
+      .map((category) => [category.name, {
+        matchPresets: [...category.matchPresets],
+        matchConditions: []
+      }])
+  );
+
+  const defaultGroupSortSettings = Object.fromEntries(
+    categoryLibrary
+      .filter((category) => groupOrder.includes(category.name))
+      .map((category) => [category.name, {
+        ignorePrefixes: [...(category.ignorePrefixes || [])],
+        subgroups: [...(category.subgroups || [])],
+        interfileSubgroups: true
+      }])
+  );
+
   const branchProfiles = [
     ["downtown-reno", "Downtown Reno Library"],
     ["duncan-traner", "Duncan/Traner Community Library"],
@@ -202,11 +221,11 @@
       name,
       branchName: name,
       ruleMode: "custom",
-      groupOrder: ["Other"],
+      groupOrder: [...baseProfile.groupOrder],
       disabledGroups: [],
       groupSortModes: {},
-      categoryRules: {},
-      groupSortSettings: {}
+      categoryRules: defaultCategoryRules,
+      groupSortSettings: defaultGroupSortSettings
     }))
   ];
 

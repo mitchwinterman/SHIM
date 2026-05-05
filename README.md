@@ -34,7 +34,7 @@ SHIM supports selectable branch profiles for experimenting with branch-specific 
 - Built-in profiles live in `js/profile.js`.
 - The current MVP sorting profile remains the default.
 - Staff can select a branch profile above the paste box.
-- Branch profiles start with only `Other`; staff add built-in or custom categories from the settings menu.
+- Branch profiles start aligned to the MVP profile; staff can add, remove, combine, or customize categories from the settings menu.
 - SHIM remembers the last selected branch in the browser.
 - The settings panel allows drag-and-drop group ordering, category building, category combining, and per-group item sort settings.
 - Category settings control what goes into a category through checked presets and typed match text for collection, shelving location, call number, item type, and title.
