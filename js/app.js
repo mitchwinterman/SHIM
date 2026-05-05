@@ -21,7 +21,12 @@
     settingsModal: document.getElementById("settings-modal"),
     settingsTitle: document.getElementById("settings-title"),
     closeSettingsButton: document.getElementById("close-settings-button"),
+    addCategorySelect: document.getElementById("add-category-select"),
+    addCategoryButton: document.getElementById("add-category-button"),
+    customCategoryName: document.getElementById("custom-category-name"),
+    addCustomCategoryButton: document.getElementById("add-custom-category-button"),
     groupOrderList: document.getElementById("group-order-list"),
+    categoryEditor: document.getElementById("category-editor"),
     saveSettingsButton: document.getElementById("save-settings-button"),
     resetSettingsButton: document.getElementById("reset-settings-button"),
     exportSettingsButton: document.getElementById("export-settings-button"),
@@ -29,13 +34,26 @@
     importSettingsButton: document.getElementById("import-settings-button")
   };
   const storage = getStorage();
+  const categoryLibrary = shim.getCategoryLibrary();
+  const conditionFields = [
+    { field: "collection", label: "Collection contains" },
+    { field: "location", label: "Shelving location contains" },
+    { field: "callNumber", label: "Call number contains" },
+    { field: "callNumber", label: "Call number starts with", operator: "startsWith" },
+    { field: "itemType", label: "Item type contains" },
+    { field: "title", label: "Title contains" }
+  ];
   let profiles = loadProfiles();
   let selectedProfileId = profileStore.loadSelectedProfileId(storage, shim.defaultProfileId);
   let editingGroupOrder = [];
   let editingDisabledGroups = [];
   let editingGroupSortModes = {};
+  let editingCategoryRules = {};
+  let editingGroupSortSettings = {};
+  let selectedEditingGroup = "Other";
   let draggedGroup = "";
 
+  renderAddCategoryOptions();
   renderBranchSelector();
   updateActiveBranch();
 
@@ -59,12 +77,28 @@
       closeSettings();
     }
   });
+  elements.addCategoryButton.addEventListener("click", () => {
+    const name = elements.addCategorySelect.value;
+    const template = categoryLibrary.find((item) => item.name === name);
+    if (template) {
+      addCategory(template.name, template);
+    }
+  });
+  elements.addCustomCategoryButton.addEventListener("click", () => {
+    const name = elements.customCategoryName.value.trim();
+    if (name) {
+      addCategory(name, { name, matchPresets: [] });
+      elements.customCategoryName.value = "";
+    }
+  });
 
   elements.saveSettingsButton.addEventListener("click", () => {
     profileStore.saveOverride(storage, selectedProfileId, {
       groupOrder: editingGroupOrder,
       disabledGroups: editingDisabledGroups,
-      groupSortModes: editingGroupSortModes
+      groupSortModes: editingGroupSortModes,
+      categoryRules: editingCategoryRules,
+      groupSortSettings: editingGroupSortSettings
     });
     refreshProfiles();
     closeSettings();
@@ -81,7 +115,9 @@
       ...getSelectedProfile(),
       groupOrder: editingGroupOrder,
       disabledGroups: editingDisabledGroups,
-      groupSortModes: editingGroupSortModes
+      groupSortModes: editingGroupSortModes,
+      categoryRules: editingCategoryRules,
+      groupSortSettings: editingGroupSortSettings
     });
     elements.importSettingsText.focus();
     elements.importSettingsText.select();
@@ -90,9 +126,12 @@
   elements.importSettingsButton.addEventListener("click", () => {
     try {
       const imported = profileStore.importOverride(elements.importSettingsText.value, getSelectedProfile());
-      editingGroupOrder = imported.groupOrder;
+      editingGroupOrder = ensureOtherLast(imported.groupOrder);
       editingDisabledGroups = imported.disabledGroups;
       editingGroupSortModes = imported.groupSortModes;
+      editingCategoryRules = imported.categoryRules;
+      editingGroupSortSettings = imported.groupSortSettings;
+      selectedEditingGroup = editingGroupOrder.find((group) => group !== "Other") || "Other";
       renderGroupOrderEditor();
     } catch (error) {
       elements.importSettingsText.focus();
@@ -121,6 +160,12 @@
     return profiles.find((profile) => profile.id === selectedProfileId) || profiles[0];
   }
 
+  function renderAddCategoryOptions() {
+    elements.addCategorySelect.replaceChildren(...categoryLibrary.map((category) => (
+      el("option", { value: category.name }, category.name)
+    )));
+  }
+
   function renderBranchSelector() {
     elements.branchSelector.replaceChildren(...profiles.map((profile) => {
       const button = el("button", {
@@ -147,9 +192,12 @@
 
   function openSettings() {
     const selected = getSelectedProfile();
-    editingGroupOrder = [...selected.groupOrder];
+    editingGroupOrder = ensureOtherLast([...selected.groupOrder]);
     editingDisabledGroups = [...(selected.disabledGroups || [])];
     editingGroupSortModes = { ...(selected.groupSortModes || {}) };
+    editingCategoryRules = cloneData(selected.categoryRules || {});
+    editingGroupSortSettings = cloneData(selected.groupSortSettings || {});
+    selectedEditingGroup = editingGroupOrder.find((group) => group !== "Other") || "Other";
     elements.settingsTitle.textContent = `${selected.branchName || selected.name} sorting settings`;
     elements.importSettingsText.value = "";
     renderGroupOrderEditor();
@@ -183,12 +231,12 @@
       const upButton = el("button", {
         className: "move-button",
         type: "button",
-        disabled: index === 0
+        disabled: isOther || index === 0
       }, "Up");
       const downButton = el("button", {
         className: "move-button",
         type: "button",
-        disabled: index === editingGroupOrder.length - 1
+        disabled: isOther || index === editingGroupOrder.length - 1
       }, "Down");
 
       upButton.addEventListener("click", () => moveGroup(index, -1));
@@ -201,9 +249,19 @@
         setGroupSortMode(group, sortSelect.value);
       });
 
+      const rowClasses = [
+        "group-order-item",
+        isEnabled ? "" : "is-disabled",
+        group === selectedEditingGroup ? "is-selected" : ""
+      ].filter(Boolean).join(" ");
+      const editButton = el("button", {
+        className: "move-button",
+        type: "button"
+      }, group === "Other" ? "View" : "Edit");
+
       const row = el("li", {
-        className: isEnabled ? "group-order-item" : "group-order-item is-disabled",
-        draggable: "true",
+        className: rowClasses,
+        draggable: isOther ? "false" : "true",
         "data-group": group
       },
         el("div", { className: "group-order-main" },
@@ -215,10 +273,18 @@
         ),
         el("div", { className: "group-order-actions" },
           el("label", { className: "sort-mode-label" }, "Items", sortSelect),
+          editButton,
           upButton,
           downButton
         )
       );
+      editButton.addEventListener("click", () => selectEditingGroup(group));
+      row.addEventListener("click", (event) => {
+        if (event.target.closest("button, input, select, label")) {
+          return;
+        }
+        selectEditingGroup(group);
+      });
       row.addEventListener("dragstart", (event) => {
         draggedGroup = group;
         event.dataTransfer.effectAllowed = "move";
@@ -240,9 +306,222 @@
       });
       return row;
     }));
+    renderCategoryEditor();
+  }
+
+  function renderCategoryEditor() {
+    const group = selectedEditingGroup;
+    if (!editingGroupOrder.includes(group)) {
+      selectedEditingGroup = editingGroupOrder.find((item) => item !== "Other") || "Other";
+      renderCategoryEditor();
+      return;
+    }
+
+    if (group === "Other") {
+      elements.categoryEditor.replaceChildren(
+        el("h3", {}, "Other"),
+        el("p", { className: "settings-note" }, "Other is the safety category. Items land here when no enabled branch category matches them.")
+      );
+      return;
+    }
+
+    const rule = getEditingRule(group);
+    const settings = getEditingSortSettings(group);
+    const matchOptions = categoryLibrary.map((category) => {
+      const checkbox = el("input", {
+        type: "checkbox",
+        checked: category.matchPresets.every((preset) => rule.matchPresets.includes(preset))
+      });
+      checkbox.addEventListener("change", () => {
+        setMatchPresetGroup(group, category.matchPresets, checkbox.checked);
+      });
+      return el("label", { className: "match-option" },
+        checkbox,
+        el("span", {}, category.name)
+      );
+    });
+
+    const conditionInputs = conditionFields.map((config) => {
+      const operator = config.operator || "contains";
+      const textarea = el("textarea", {
+        className: "settings-mini-textarea",
+        spellcheck: "false"
+      }, conditionsToText(rule.matchConditions, config.field, operator));
+      textarea.addEventListener("input", () => {
+        setConditionText(group, config.field, operator, textarea.value);
+      });
+      return el("label", { className: "settings-field" },
+        config.label,
+        textarea
+      );
+    });
+
+    const subgroupsInput = el("textarea", {
+      className: "settings-mini-textarea",
+      spellcheck: "false"
+    }, listToText(settings.subgroups));
+    subgroupsInput.addEventListener("input", () => {
+      getEditingSortSettings(group).subgroups = parseList(subgroupsInput.value);
+    });
+
+    const ignoreInput = el("textarea", {
+      className: "settings-mini-textarea",
+      spellcheck: "false"
+    }, listToText(settings.ignorePrefixes));
+    ignoreInput.addEventListener("input", () => {
+      getEditingSortSettings(group).ignorePrefixes = parseList(ignoreInput.value);
+    });
+
+    const interfileCheckbox = el("input", {
+      type: "checkbox",
+      checked: settings.interfileSubgroups !== false
+    });
+    interfileCheckbox.addEventListener("change", () => {
+      getEditingSortSettings(group).interfileSubgroups = interfileCheckbox.checked;
+    });
+
+    const removeButton = el("button", { className: "secondary-button", type: "button" }, "Remove Category");
+    removeButton.addEventListener("click", () => removeCategory(group));
+
+    elements.categoryEditor.replaceChildren(
+      el("div", { className: "category-editor-heading" },
+        el("h3", {}, group),
+        removeButton
+      ),
+      el("p", { className: "settings-note" }, "Check every signal that should go into this category. The first enabled category that matches an item wins."),
+      el("div", { className: "match-options" }, ...matchOptions),
+      el("h4", {}, "Additional Match Text"),
+      el("div", { className: "settings-fields" }, ...conditionInputs),
+      el("h4", {}, "Shelf Logic"),
+      el("label", { className: "settings-field" },
+        "Subgroups in shelf order",
+        subgroupsInput
+      ),
+      el("label", { className: "settings-field" },
+        "Ignore leading call-number text",
+        ignoreInput
+      ),
+      el("label", { className: "inline-setting" },
+        interfileCheckbox,
+        "Interfile subgroups instead of printing one subgroup before another"
+      )
+    );
+  }
+
+  function addCategory(name, template) {
+    const group = name.trim();
+    if (!group || group === "Other") {
+      return;
+    }
+    if (!editingGroupOrder.includes(group)) {
+      const otherIndex = editingGroupOrder.indexOf("Other");
+      const insertAt = otherIndex >= 0 ? otherIndex : editingGroupOrder.length;
+      editingGroupOrder.splice(insertAt, 0, group);
+    }
+    editingGroupOrder = ensureOtherLast(editingGroupOrder);
+    editingDisabledGroups = editingDisabledGroups.filter((item) => item !== group);
+    editingCategoryRules[group] = {
+      matchPresets: [...(template.matchPresets || [])],
+      matchConditions: []
+    };
+    editingGroupSortSettings[group] = {
+      ignorePrefixes: [...(template.ignorePrefixes || [])],
+      subgroups: [...(template.subgroups || [])],
+      interfileSubgroups: true
+    };
+    selectedEditingGroup = group;
+    renderGroupOrderEditor();
+  }
+
+  function removeCategory(group) {
+    if (group === "Other") {
+      return;
+    }
+    editingGroupOrder = editingGroupOrder.filter((item) => item !== group);
+    editingDisabledGroups = editingDisabledGroups.filter((item) => item !== group);
+    delete editingGroupSortModes[group];
+    delete editingCategoryRules[group];
+    delete editingGroupSortSettings[group];
+    selectedEditingGroup = editingGroupOrder.find((item) => item !== "Other") || "Other";
+    renderGroupOrderEditor();
+  }
+
+  function selectEditingGroup(group) {
+    selectedEditingGroup = group;
+    renderGroupOrderEditor();
+  }
+
+  function getEditingRule(group) {
+    if (!editingCategoryRules[group]) {
+      editingCategoryRules[group] = { matchPresets: [], matchConditions: [] };
+    }
+    editingCategoryRules[group].matchPresets = editingCategoryRules[group].matchPresets || [];
+    editingCategoryRules[group].matchConditions = editingCategoryRules[group].matchConditions || [];
+    return editingCategoryRules[group];
+  }
+
+  function getEditingSortSettings(group) {
+    if (!editingGroupSortSettings[group]) {
+      editingGroupSortSettings[group] = { ignorePrefixes: [], subgroups: [], interfileSubgroups: true };
+    }
+    editingGroupSortSettings[group].ignorePrefixes = editingGroupSortSettings[group].ignorePrefixes || [];
+    editingGroupSortSettings[group].subgroups = editingGroupSortSettings[group].subgroups || [];
+    if (typeof editingGroupSortSettings[group].interfileSubgroups !== "boolean") {
+      editingGroupSortSettings[group].interfileSubgroups = true;
+    }
+    return editingGroupSortSettings[group];
+  }
+
+  function setMatchPresetGroup(group, presets, checked) {
+    const rule = getEditingRule(group);
+    const next = new Set(rule.matchPresets);
+    presets.forEach((preset) => {
+      if (checked) {
+        next.add(preset);
+      } else {
+        next.delete(preset);
+      }
+    });
+    rule.matchPresets = Array.from(next);
+    renderCategoryEditor();
+  }
+
+  function setConditionText(group, field, operator, text) {
+    const rule = getEditingRule(group);
+    rule.matchConditions = rule.matchConditions.filter((condition) => (
+      condition.field !== field || condition.operator !== operator
+    ));
+    parseList(text).forEach((value) => {
+      rule.matchConditions.push({ field, operator, value });
+    });
+  }
+
+  function conditionsToText(conditions, field, operator) {
+    return (conditions || [])
+      .filter((condition) => condition.field === field && condition.operator === operator)
+      .map((condition) => condition.value)
+      .join("\n");
+  }
+
+  function parseList(text) {
+    return String(text || "")
+      .split(/[\n,]+/)
+      .map((item) => item.trim())
+      .filter((item, index, items) => item && items.indexOf(item) === index);
+  }
+
+  function listToText(items) {
+    return (items || []).join("\n");
+  }
+
+  function cloneData(value) {
+    return JSON.parse(JSON.stringify(value || {}));
   }
 
   function moveGroup(index, offset) {
+    if (editingGroupOrder[index] === "Other") {
+      return;
+    }
     const targetIndex = index + offset;
     if (targetIndex < 0 || targetIndex >= editingGroupOrder.length) {
       return;
@@ -250,12 +529,12 @@
     const next = [...editingGroupOrder];
     const [group] = next.splice(index, 1);
     next.splice(targetIndex, 0, group);
-    editingGroupOrder = next;
+    editingGroupOrder = ensureOtherLast(next);
     renderGroupOrderEditor();
   }
 
   function moveGroupTo(sourceGroup, targetGroup) {
-    if (!sourceGroup || sourceGroup === targetGroup) {
+    if (!sourceGroup || sourceGroup === targetGroup || sourceGroup === "Other") {
       return;
     }
     const sourceIndex = editingGroupOrder.indexOf(sourceGroup);
@@ -265,9 +544,19 @@
     }
     const next = [...editingGroupOrder];
     const [group] = next.splice(sourceIndex, 1);
-    next.splice(targetIndex, 0, group);
-    editingGroupOrder = next;
+    const adjustedTarget = targetGroup === "Other"
+      ? next.indexOf("Other")
+      : targetIndex - (sourceIndex < targetIndex ? 1 : 0);
+    next.splice(adjustedTarget, 0, group);
+    editingGroupOrder = ensureOtherLast(next);
     renderGroupOrderEditor();
+  }
+
+  function ensureOtherLast(groups) {
+    return [
+      ...groups.filter((group) => group !== "Other"),
+      "Other"
+    ];
   }
 
   function setGroupEnabled(group, enabled) {

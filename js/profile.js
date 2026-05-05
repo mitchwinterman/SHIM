@@ -38,9 +38,12 @@
     id: "mvp",
     name: "Washoe County Library System MVP",
     branchName: "MVP",
+    ruleMode: "mvp",
     groupOrder,
     disabledGroups: [],
     groupSortModes: {},
+    categoryRules: {},
+    groupSortSettings: {},
     defaultGroup: "Other",
     enabledRules: {
       separateEarlyReaders: true,
@@ -120,6 +123,62 @@
     ]
   };
 
+  const categoryLibrary = [
+    { name: "New Adult Fiction", matchPresets: ["new-adult-fiction"] },
+    { name: "New Adult Nonfiction", matchPresets: ["new-adult-nonfiction"] },
+    { name: "New Adult Biography", matchPresets: ["new-adult-biography"] },
+    { name: "NEW Large Print", matchPresets: ["new-large-print"] },
+    { name: "Adult Fiction", matchPresets: ["adult-fiction"] },
+    { name: "Adult Nonfiction", matchPresets: ["adult-nonfiction"] },
+    { name: "Biography", matchPresets: ["biography"] },
+    { name: "Large Print Fiction", matchPresets: ["large-print-fiction"] },
+    { name: "New YA", matchPresets: ["new-ya"] },
+    { name: "YA Fiction", matchPresets: ["ya-fiction"] },
+    { name: "YA Nonfiction", matchPresets: ["ya-nonfiction"] },
+    { name: "Board Books", matchPresets: ["board-books"] },
+    { name: "Early Readers", matchPresets: ["early-readers"] },
+    { name: "Picture Books/Easy Readers", matchPresets: ["picture-books"] },
+    { name: "Children's NONFiction", matchPresets: ["children-nonfiction"] },
+    { name: "Children's Fiction", matchPresets: ["children-fiction"] },
+    { name: "NEW Children's Fiction", matchPresets: ["new-children-fiction"] },
+    { name: "Nevada Collection", matchPresets: ["nevada"] },
+    { name: "Adult World Language", matchPresets: ["adult-world-language"] },
+    { name: "Children's World Language", matchPresets: ["children-world-language"] },
+    { name: "Special Collections", matchPresets: ["special-collections"] },
+    {
+      name: "DVDs",
+      matchPresets: ["adult-dvd"],
+      subgroups: ["DVD"],
+      ignorePrefixes: ["DVD", "VIDEO"]
+    },
+    {
+      name: "Blu-rays",
+      matchPresets: ["adult-bluray"],
+      subgroups: ["BLU-RAY", "BLURAY"],
+      ignorePrefixes: ["BLU-RAY", "BLURAY", "VIDEO"]
+    },
+    {
+      name: "Children's DVDs",
+      matchPresets: ["j-dvd"],
+      subgroups: ["J DVD"],
+      ignorePrefixes: ["J DVD", "DVD", "VIDEO"]
+    },
+    {
+      name: "Children's Blu-rays",
+      matchPresets: ["j-bluray"],
+      subgroups: ["J BLU-RAY", "J BLURAY"],
+      ignorePrefixes: ["J BLU-RAY", "J BLURAY", "BLU-RAY", "BLURAY", "VIDEO"]
+    },
+    {
+      name: "BluRays and DVDs",
+      matchPresets: ["adult-dvd", "adult-bluray", "j-dvd", "j-bluray"],
+      subgroups: ["J DVD", "DVD", "J BLU-RAY", "BLU-RAY"],
+      ignorePrefixes: ["J DVD", "DVD", "J BLU-RAY", "BLU-RAY", "BLURAY", "VIDEO"]
+    },
+    { name: "Music CDs", matchPresets: ["music-cd"] },
+    { name: "Audiobook CDs", matchPresets: ["audiobook-cd"] }
+  ];
+
   const branchProfiles = [
     ["downtown-reno", "Downtown Reno Library"],
     ["duncan-traner", "Duncan/Traner Community Library"],
@@ -142,14 +201,18 @@
       id,
       name,
       branchName: name,
-      groupOrder: [...baseProfile.groupOrder],
+      ruleMode: "custom",
+      groupOrder: ["Other"],
       disabledGroups: [],
-      groupSortModes: {}
+      groupSortModes: {},
+      categoryRules: {},
+      groupSortSettings: {}
     }))
   ];
 
   return {
     defaultProfileId: baseProfile.id,
+    categoryLibrary,
     profiles
   };
 });

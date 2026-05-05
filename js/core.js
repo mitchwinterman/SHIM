@@ -20,6 +20,9 @@
   });
 
   const builtInProfiles = normalizeProfileRegistry(profileRegistry);
+  const categoryLibrary = Array.isArray(profileRegistry.categoryLibrary)
+    ? profileRegistry.categoryLibrary.map(cloneProfile)
+    : [];
   const defaultProfileId = profileRegistry.defaultProfileId || builtInProfiles[0].id;
   let profile = resolveProfile(defaultProfileId);
   let collectionLookup = buildCollectionLookup(profile);
@@ -81,6 +84,10 @@
     return builtInProfiles.map(cloneProfile);
   }
 
+  function getCategoryLibrary() {
+    return categoryLibrary.map(cloneProfile);
+  }
+
   function normalizeProfileRegistry(registry) {
     if (Array.isArray(registry)) {
       return registry.map(cloneProfile);
@@ -100,15 +107,17 @@
   }
 
   function cloneProfile(source) {
-    const copy = { ...source };
-    for (const [key, value] of Object.entries(copy)) {
-      if (Array.isArray(value)) {
-        copy[key] = [...value];
-      } else if (value && typeof value === "object") {
-        copy[key] = { ...value };
-      }
+    if (Array.isArray(source)) {
+      return source.map(cloneProfile);
     }
-    return copy;
+    if (source && typeof source === "object") {
+      const copy = {};
+      for (const [key, value] of Object.entries(source)) {
+        copy[key] = cloneProfile(value);
+      }
+      return copy;
+    }
+    return source;
   }
 
   function parseHolds(rawText) {
@@ -376,6 +385,10 @@
   }
 
   function classifyRecord(record) {
+    if (profile.ruleMode === "custom") {
+      return classifyCustomRecord(record);
+    }
+
     const text = recordText(record);
     const collection = normalizeText(record.collection);
 
@@ -507,6 +520,123 @@
     return "Other";
   }
 
+  function classifyCustomRecord(record) {
+    if (record.reviewReasons.length > 0) {
+      return "Other";
+    }
+
+    for (const group of profile.groupOrder) {
+      if (group === "Other" || !isGroupEnabled(group)) {
+        continue;
+      }
+      if (matchesCategoryRule(record, (profile.categoryRules || {})[group])) {
+        return group;
+      }
+    }
+
+    record.reviewReasons.push("No branch category matched.");
+    return "Other";
+  }
+
+  function matchesCategoryRule(record, rule) {
+    if (!rule) {
+      return false;
+    }
+    const presets = Array.isArray(rule.matchPresets) ? rule.matchPresets : [];
+    const conditions = Array.isArray(rule.matchConditions) ? rule.matchConditions : [];
+    return presets.some((preset) => matchesPreset(record, preset))
+      || conditions.some((condition) => matchesCondition(record, condition));
+  }
+
+  function matchesPreset(record, preset) {
+    switch (preset) {
+      case "new-adult-fiction":
+        return isNew(record) && isAdultFictionLike(record);
+      case "new-adult-nonfiction":
+        return isNew(record) && isAdultNonfictionLike(record);
+      case "new-adult-biography":
+        return isNew(record) && isAdultBiography(record);
+      case "new-large-print":
+        return isNew(record) && isLargePrint(record);
+      case "adult-fiction":
+        return !isNew(record) && isAdultFictionLike(record);
+      case "adult-nonfiction":
+        return !isNew(record) && isAdultNonfictionLike(record);
+      case "biography":
+        return !isNew(record) && isAdultBiography(record);
+      case "large-print-fiction":
+        return !isNew(record) && isLargePrint(record) && isAdultFictionLike(record);
+      case "new-ya":
+        return isNew(record) && isYa(record);
+      case "ya-fiction":
+        return !isNew(record) && isYa(record) && !isYaNonfiction(record);
+      case "ya-nonfiction":
+        return !isNew(record) && isYaNonfiction(record);
+      case "board-books":
+        return normalizeText(record.collection) === "CHILDREN'S BOARD BOOKS";
+      case "early-readers":
+        return isEarlyReader(record);
+      case "picture-books":
+        return isPictureBook(record);
+      case "children-nonfiction":
+        return isChildrenNonfiction(record);
+      case "children-fiction":
+        return !isNew(record) && isChildrenFiction(record);
+      case "new-children-fiction":
+        return isNew(record) && isChildrenFiction(record);
+      case "nevada":
+        return isNevada(record);
+      case "adult-world-language":
+        return isWorldLanguage(record) && !isChildOrYa(record);
+      case "children-world-language":
+        return isWorldLanguage(record) && isChildOrYa(record);
+      case "special-collections":
+        return isSpecial(record);
+      case "adult-dvd":
+        return isAdultDvd(record);
+      case "adult-bluray":
+        return isAdultBluRay(record);
+      case "j-dvd":
+        return isChildDvd(record);
+      case "j-bluray":
+        return isChildBluRay(record);
+      case "music-cd":
+        return isMusicCd(record);
+      case "audiobook-cd":
+        return isAudiobookCd(record);
+      default:
+        return false;
+    }
+  }
+
+  function matchesCondition(record, condition) {
+    const value = normalizeText(condition && condition.value);
+    if (!value) {
+      return false;
+    }
+    const fieldValue = normalizeText(fieldForCondition(record, condition.field));
+    if (condition.operator === "startsWith") {
+      return fieldValue.startsWith(value);
+    }
+    return fieldValue.includes(value);
+  }
+
+  function fieldForCondition(record, field) {
+    if (field === "collection") {
+      return record.collection;
+    }
+    if (field === "location") {
+      return record.location;
+    }
+    if (field === "itemType") {
+      return record.itemType;
+    }
+    if (field === "title") {
+      return record.title;
+    }
+    return record.callNumber;
+  }
+
   function chooseGroup(candidates) {
     return candidates.find((group) => isGroupEnabled(group)) || "";
   }
@@ -521,6 +651,9 @@
   function buildSortKey(record) {
     const group = record.group;
     const sortMode = profile.groupSortModes && profile.groupSortModes[group];
+    if (profile.ruleMode === "custom") {
+      return buildCustomSortKey(record, sortMode || "shelf");
+    }
     if (sortMode === "title") {
       return normalizeTitle(record.title);
     }
@@ -573,6 +706,59 @@
       return stripShelfPrefixes(record.callNumber) || normalizeTitle(record.title);
     }
     return stripShelfPrefixes(record.callNumber) || normalizeTitle(record.title);
+  }
+
+  function buildCustomSortKey(record, sortMode) {
+    const settings = (profile.groupSortSettings || {})[record.group] || {};
+    const subgroup = findSubgroup(record, settings.subgroups || []);
+    const subgroupKey = settings.interfileSubgroups ? "" : `${String(subgroup.index).padStart(3, "0")} `;
+
+    if (sortMode === "title") {
+      return `${subgroupKey}${normalizeTitle(record.title)}`;
+    }
+    if (sortMode === "author") {
+      return `${subgroupKey}${normalizeText(record.author)} ${normalizeTitle(record.title)}`;
+    }
+    if (sortMode === "barcode") {
+      return `${subgroupKey}${record.barcode || ""}`;
+    }
+    if (sortMode === "raw-call") {
+      return `${subgroupKey}${normalizeText(record.callNumber) || normalizeTitle(record.title)}`;
+    }
+
+    return `${subgroupKey}${cleanCustomCallNumber(record.callNumber, settings, subgroup.value) || normalizeTitle(record.title)}`;
+  }
+
+  function findSubgroup(record, subgroups) {
+    const call = normalizeText(record.callNumber);
+    const normalizedSubgroups = subgroups.map(normalizeText).filter(Boolean);
+    for (let index = 0; index < normalizedSubgroups.length; index += 1) {
+      const subgroup = normalizedSubgroups[index];
+      if (call.startsWith(subgroup)) {
+        return { index, value: subgroup };
+      }
+    }
+    return { index: normalizedSubgroups.length, value: "" };
+  }
+
+  function cleanCustomCallNumber(value, settings, subgroup) {
+    let output = normalizeText(value);
+    const prefixes = [
+      subgroup,
+      ...((settings.ignorePrefixes || []).map(normalizeText))
+    ].filter(Boolean);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const prefix of prefixes) {
+        const pattern = new RegExp(`^${escapeRegExp(prefix)}\\b\\s*`);
+        if (pattern.test(output)) {
+          output = output.replace(pattern, "").trim();
+          changed = true;
+        }
+      }
+    }
+    return output;
   }
 
   function compareRecords(a, b) {
@@ -642,6 +828,31 @@
     const call = normalizeText(record.callNumber);
     return profile.mediaCollections.map(normalizeText).includes(collection)
       || /^(J\s+)?(DVD|BLU-?RAY)\b/.test(call);
+  }
+
+  function isAdultDvd(record) {
+    const call = normalizeText(record.callNumber);
+    return !isChildDvd(record) && /^DVD\b/.test(call);
+  }
+
+  function isAdultBluRay(record) {
+    const call = normalizeText(record.callNumber);
+    return !isChildBluRay(record) && (/^BLU-?RAY\b/.test(call) || /^BLURAY\b/.test(call));
+  }
+
+  function isChildDvd(record) {
+    const collection = normalizeText(record.collection);
+    const call = normalizeText(record.callNumber);
+    return /^J\s+DVD\b/.test(call)
+      || (collection.includes("CHILDREN") && /^DVD\b/.test(call));
+  }
+
+  function isChildBluRay(record) {
+    const collection = normalizeText(record.collection);
+    const call = normalizeText(record.callNumber);
+    return /^J\s+BLU-?RAY\b/.test(call)
+      || /^J\s+BLURAY\b/.test(call)
+      || (collection.includes("CHILDREN") && (/^BLU-?RAY\b/.test(call) || /^BLURAY\b/.test(call)));
   }
 
   function isMusicCd(record) {
@@ -905,6 +1116,7 @@
     profile,
     defaultProfileId,
     getProfiles,
+    getCategoryLibrary,
     resolveProfile,
     formatHolds,
     parseHolds,

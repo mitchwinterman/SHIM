@@ -70,8 +70,23 @@
           </div>
           <button id="close-settings-button" class="icon-button" type="button" aria-label="Close settings">Close</button>
         </div>
-        <p class="settings-note">Drag groups into shelf-walk order, turn off categories that are interfiled elsewhere, and choose how items sort inside each group. These experimental settings save in this browser.</p>
-        <ol id="group-order-list" class="group-order-list"></ol>
+        <p class="settings-note">Start with Other, add categories, choose what belongs in each category, then define subgroup and shelf-sort behavior. These experimental settings save in this browser.</p>
+        <div class="category-builder" aria-label="Add categories">
+          <label>
+            Built-in category
+            <select id="add-category-select"></select>
+          </label>
+          <button id="add-category-button" class="secondary-button" type="button">Add Category</button>
+          <label>
+            Custom category
+            <input id="custom-category-name" type="text" autocomplete="off">
+          </label>
+          <button id="add-custom-category-button" class="secondary-button" type="button">Create Category</button>
+        </div>
+        <div class="settings-grid">
+          <ol id="group-order-list" class="group-order-list"></ol>
+          <section id="category-editor" class="category-editor" aria-label="Selected category settings"></section>
+        </div>
         <div class="settings-actions">
           <button id="save-settings-button" class="primary-button" type="button">Save Settings</button>
           <button id="reset-settings-button" class="secondary-button" type="button">Reset Branch</button>
