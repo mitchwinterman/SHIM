@@ -679,7 +679,14 @@ tbody tr:nth-child(even) td {
 }
 
 .barcode-last-four {
-  font-weight: 900;
+  color: #000000;
+  font-weight: 950;
+}
+
+.item-level-barcode {
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 2px;
 }
 
 .row-note {
@@ -883,6 +890,16 @@ tbody tr:nth-child(even) td {
   .barcode-cell {
     width: 17%;
     font-size: 7.8pt;
+  }
+
+  .barcode-last-four {
+    color: #000000;
+    font-weight: 900;
+    -webkit-text-stroke: 0.15px #000000;
+  }
+
+  .item-level-barcode {
+    text-decoration-thickness: 1px;
   }
 
   .type-cell {

@@ -766,27 +766,37 @@
 
   function renderBarcode(record) {
     const text = record.barcodeText || record.barcode || "";
-    const match = text.match(/^(\d{14})(.*)$/);
+    const match = text.match(/^(.*?)(\d{14})(.*)$/);
     if (!match) {
       return text;
     }
 
-    const barcode = match[1];
-    const suffix = match[2].trim();
-    const formattedBarcode = el("span", { className: "barcode-number" },
+    const prefix = match[1];
+    const barcode = match[2];
+    const suffix = match[3].trim();
+    const isItemLevelHold = /\bonly\s+item\s*:/i.test(prefix);
+    const formattedBarcode = el("span", {
+      className: `barcode-number${isItemLevelHold ? " item-level-barcode" : ""}`
+    },
       barcode.slice(0, -4),
       el("strong", { className: "barcode-last-four" }, barcode.slice(-4))
     );
+    const parts = [];
+
+    if (prefix) {
+      parts.push(el("span", { className: "barcode-prefix" }, prefix));
+    }
+    parts.push(formattedBarcode);
 
     if (!suffix) {
-      return formattedBarcode;
+      return parts;
     }
 
-    return [
-      formattedBarcode,
+    parts.push(
       " ",
       el("span", { className: "availability-note" }, suffix)
-    ];
+    );
+    return parts;
   }
 
   function updatePrintPageStyle() {
