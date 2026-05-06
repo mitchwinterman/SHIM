@@ -1090,6 +1090,7 @@
 
   function stripDvdPrefix(value) {
     let output = normalizeText(value);
+    output = output.replace(/^[A-Z]+(?:\s+[A-Z]+)*\s+(?=(DVD|BLU-?RAY|BLURAY)\b)/, "");
     let changed = true;
     while (changed) {
       changed = false;

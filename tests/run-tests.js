@@ -122,7 +122,7 @@ const languageDvdResult = shim.formatHolds(languageDvdFixture, "downtown-reno");
 assert.strictEqual(languageDvdResult.report.otherRecords.length, 0);
 assert.strictEqual(languageDvdResult.groups[0].name, "BluRays and DVDs");
 
-const mediaBioSortFixture = `6 items found for Test Library
+const mediaBioSortFixture = `10 items found for Test Library
 All the king's men [DVD videorecording] / DVD VIDEO
 
 \tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO ALL FULL\t31235000000020 or any available\tRN Downtown Reno Library\t05/01/2026
@@ -140,7 +140,19 @@ Who do you think you are?. [DVD videorecording] / DVD VIDEO 929 Season 1
 \tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO 929 WHO WIDE\t31235000000024 or any available\tRN Downtown Reno Library\t05/01/2026
 Anchors aweigh [DVD videorecording] / DVD VIDEO Frank Sinatra collection
 
-\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO ANC FULLSCREEN\t31235000000025 or any available\tRN Downtown Reno Library\t05/01/2026`;
+\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO ANC FULLSCREEN\t31235000000025 or any available\tRN Downtown Reno Library\t05/01/2026
+For whom the bell tolls [DVD videorecording] / DVD VIDEO
+
+\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO FOR\t31235000000026 or any available\tRN Downtown Reno Library\t05/01/2026
+Day for night [Blu-Ray] / FRENCH BLU-RAY Criterion collection ;
+
+\tDVD / Blu-rays\t\tBlu-ray 07 Day\tFRENCH BLU-RAY DAY\t31235000000027 or any available\tRN Downtown Reno Library\t05/01/2026
+The worst person in the world [DVD videorecording] / NORWEGIAN DVD VIDEO Criterion collection
+
+\tDVD / Blu-rays\t\tDVD 07 Day\tNORWEGIAN DVD VIDEO WORST\t31235000000028 or any available\tRN Downtown Reno Library\t05/01/2026
+Wimbledon [DVD videorecording] / DVD VIDEO
+
+\tDVD / Blu-rays\t\tDVD 07 Day\tDVD VIDEO WIM WIDESCREEN\t31235000000029 or any available\tRN Downtown Reno Library\t05/01/2026`;
 const mediaBioSortResult = shim.formatHolds(mediaBioSortFixture, "downtown-reno");
 assert.deepStrictEqual(mediaBioSortResult.groups[0].items.map((record) => record.callNumber), [
   "DVD VIDEO 613 TEN",
@@ -148,7 +160,11 @@ assert.deepStrictEqual(mediaBioSortResult.groups[0].items.map((record) => record
   "DVD VIDEO BIO CARSON",
   "DVD VIDEO BIO WELLS",
   "DVD VIDEO ALL FULL",
-  "DVD VIDEO ANC FULLSCREEN"
+  "DVD VIDEO ANC FULLSCREEN",
+  "FRENCH BLU-RAY DAY",
+  "DVD VIDEO FOR",
+  "DVD VIDEO WIM WIDESCREEN",
+  "NORWEGIAN DVD VIDEO WORST"
 ]);
 
 const defaultShelfSortFixture = `4 items found for Test Library
