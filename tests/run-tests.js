@@ -167,6 +167,23 @@ assert.deepStrictEqual(mediaBioSortResult.groups[0].items.map((record) => record
   "NORWEGIAN DVD VIDEO WORST"
 ]);
 
+const deweySortFixture = `3 items found for Test Library
+Composition for computer musicians / 781.34
+
+Hewitt, Michael.\tAdult Nonfiction\t\tBook\t781.34 HEW 2009\t31235033943395 or any available\tRN Downtown Reno Library\t05/01/2026
+Original gangstas : 781.649 the untold story of Dr. Dre, Eazy-E, Ice Cube, Tupac Shakur, and the birth of West Coast rap /
+
+Westhoff, Ben\tAdult Nonfiction\t\tBook\t781.649 WESTHO 2016\t31235038092602 or any available\tRN Downtown Reno Library\t05/01/2026
+There was a little girl :
+
+Shields, Brooke,\tAdult Nonfiction\t\tBook\t781.4302 SHIELD 2015\t31235037251464 or any available\tRN Downtown Reno Library\t05/01/2026`;
+const deweySortResult = shim.formatHolds(deweySortFixture, "downtown-reno");
+assert.deepStrictEqual(deweySortResult.groups[0].items.map((record) => record.callNumber), [
+  "781.34 HEW 2009",
+  "781.4302 SHIELD 2015",
+  "781.649 WESTHO 2016"
+]);
+
 const defaultShelfSortFixture = `4 items found for Test Library
 Summer state of mind / FICTION
 

@@ -727,15 +727,15 @@
       return stripBioPrefix(record.callNumber) || normalizeTitle(record.title);
     }
     if (group === "Nevada Collection") {
-      return `${subtypeRank(record)} ${stripShelfPrefixes(record.callNumber) || normalizeTitle(record.title)}`;
+      return `${subtypeRank(record)} ${deweySortKey(record.callNumber) || normalizeTitle(record.title)}`;
     }
     if (group === "Adult World Language" || group === "Children's World Language") {
-      return `${languageRank(record)} ${subtypeRank(record)} ${stripShelfPrefixes(record.callNumber) || normalizeTitle(record.title)}`;
+      return `${languageRank(record)} ${subtypeRank(record)} ${deweySortKey(record.callNumber) || normalizeTitle(record.title)}`;
     }
     if (group === "Adult Nonfiction" || group === "New Adult Nonfiction" || group === "YA Nonfiction" || group === "Children's NONFiction") {
-      return stripShelfPrefixes(record.callNumber) || normalizeTitle(record.title);
+      return deweySortKey(record.callNumber) || normalizeTitle(record.title);
     }
-    return stripShelfPrefixes(record.callNumber) || normalizeTitle(record.title);
+    return deweySortKey(record.callNumber) || normalizeTitle(record.title);
   }
 
   function mediaSortKey(record) {
@@ -812,7 +812,8 @@
       return `${subgroupKey}${normalizeText(record.callNumber) || normalizeTitle(record.title)}`;
     }
 
-    return `${subgroupKey}${cleanCustomCallNumber(record.callNumber, settings, subgroup.value) || normalizeTitle(record.title)}`;
+    const customShelfKey = cleanCustomCallNumber(record.callNumber, settings, subgroup.value);
+    return `${subgroupKey}${deweySortKeyFromShelfKey(customShelfKey) || normalizeTitle(record.title)}`;
   }
 
   function findSubgroup(record, subgroups) {
@@ -1177,6 +1178,23 @@
     output = output.replace(/^YA\s+/, "");
     output = output.replace(/^NEVADA\s+/, "");
     return output.trim();
+  }
+
+  function deweySortKey(value) {
+    return deweySortKeyFromShelfKey(stripShelfPrefixes(value));
+  }
+
+  function deweySortKeyFromShelfKey(value) {
+    const call = normalizeText(value);
+    const match = call.match(/^(\d{1,3})(?:\.(\d+))?(.*)$/);
+    if (!match) {
+      return call;
+    }
+
+    const whole = match[1].padStart(3, "0");
+    const decimal = (match[2] || "").padEnd(12, "0").slice(0, 12);
+    const rest = (match[3] || "").trim();
+    return `D${whole} F${decimal} ${rest}`;
   }
 
   function recordText(record) {
